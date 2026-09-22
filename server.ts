@@ -240,18 +240,34 @@ async function startServer() {
   });
 
   // --- Vite & Frontend Integration ---
-  if (process.env.NODE_ENV !== 'production') {
+  const distPath = path.join(process.cwd(), 'dist');
+  const hasDist = fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'));
+
+  // Detect Android/Termux or production environment to serve precompiled lightweight bundle
+  const isAndroidOrTermux = process.platform === 'android' || 
+    Boolean(process.env.TERMUX_VERSION) || 
+    Boolean(process.env.PREFIX && process.env.PREFIX.includes('termux')) ||
+    process.env.SERVE_STATIC === 'true' ||
+    process.argv.includes('--static');
+
+  if (process.env.NODE_ENV !== 'production' && !isAndroidOrTermux) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
+  } else if (hasDist) {
+    console.log('⚡ Dashboard mode: Melayani aset web pra-kompilasi (cepat, hemat RAM & anti layar putih)');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
+  } else {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
   }
 
   app.listen(PORT, '0.0.0.0', () => {
