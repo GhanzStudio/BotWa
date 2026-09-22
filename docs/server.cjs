@@ -4860,7 +4860,14 @@ async function startBaileysBot(phoneNumberForPairing) {
             }, delay);
           }
         } else {
-          console.log("[BAILEYS] \u274C Sesi WhatsApp telah dikeluarkan (Logged Out). Silakan tautkan ulang.");
+          console.log("[BAILEYS] \u2139\uFE0F Sesi WhatsApp belum terhubung atau telah dikeluarkan (Status 401).");
+          console.log("\u{1F449} Buka di Chrome: \x1B[1;32mhttp://localhost:3000/lite\x1B[0m untuk menautkan nomor WhatsApp Anda.");
+          console.log("\u{1F449} Atau jalankan di terminal: \x1B[1;33mnode pair.js\x1B[0m\n");
+          try {
+            import_fs.default.rmSync(sessionPath, { recursive: true, force: true });
+            import_fs.default.mkdirSync(sessionPath, { recursive: true });
+          } catch (_) {
+          }
         }
       } else if (connection === "open") {
         botState.status = "CONNECTED";
