@@ -16,8 +16,10 @@ import { exec } from 'child_process';
 import util from 'util';
 import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const archiver = require('archiver');
+// Safely provide require for both ESM and CJS bundle
+// @ts-ignore
+const nodeRequire = typeof require !== 'undefined' ? require : createRequire(typeof import.meta !== 'undefined' && import.meta.url ? import.meta.url : 'file://' + process.cwd() + '/server.ts');
+const archiver = nodeRequire('archiver');
 
 const execAsync = util.promisify(exec);
 
@@ -169,7 +171,7 @@ async function startServer() {
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename="ghanz-bot-md.zip"');
 
-    const archiverPkg = require('archiver');
+    const archiverPkg = nodeRequire('archiver');
     const archive = typeof archiverPkg === 'function'
       ? archiverPkg('zip', { zlib: { level: 9 } })
       : new archiverPkg.ZipArchive({ zlib: { level: 9 } });
