@@ -33,7 +33,11 @@ async function startServer() {
   await connectDB();
 
   // Initialize Baileys socket in background
-  startBaileysBot().catch((err) => {
+  const pairArg = process.argv.find(a => a.startsWith('--pair='))?.split('=')[1] || process.env.PAIR_PHONE;
+  if (pairArg) {
+    console.log(`\n⏳ Sedang meminta Kode Pairing untuk nomor: ${pairArg}...`);
+  }
+  startBaileysBot(pairArg).catch((err) => {
     console.warn('[SERVER] Baileys initial start notice:', err.message);
   });
 
@@ -252,6 +256,7 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Web Dashboard & Bot Controller berjalan di port ${PORT}`);
+    console.log(`📱 Buka di Chrome: http://localhost:${PORT} atau http://127.0.0.1:${PORT}`);
   });
 }
 

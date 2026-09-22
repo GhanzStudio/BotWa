@@ -7,7 +7,8 @@ import { Boom } from '@hapi/boom';
 import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
-  fetchLatestBaileysVersion
+  fetchLatestBaileysVersion,
+  Browsers
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import QRCode from 'qrcode';
@@ -70,7 +71,7 @@ export async function startBaileysBot(phoneNumberForPairing?: string): Promise<a
       version: version as any,
       auth: state,
       printQRInTerminal: false,
-      browser: ['Ghanz Bot MD', 'Chrome', '120.0.0'],
+      browser: Browsers.ubuntu('Chrome'),
       syncFullHistory: false,
       markOnlineOnConnect: false,
       generateHighQualityLinkPreview: false,
@@ -89,7 +90,14 @@ export async function startBaileysBot(phoneNumberForPairing?: string): Promise<a
           const code = await sock.requestPairingCode(cleanPhone);
           botState.pairingCode = code;
           botState.status = 'PAIRING_READY';
-          console.log(`[BAILEYS] Pairing Code untuk ${cleanPhone}: ${code}`);
+          console.log(`
+┌──────────────────────────────────────────────────┐
+│  🔑 KODE PAIRING WHATSAPP: ${code}              
+│  Nomor: ${cleanPhone}                            
+│  👉 Buka WA > Titik 3 > Perangkat Tertaut       
+│     > Tautkan Perangkat > Tautkan dg nomor      
+└──────────────────────────────────────────────────┘
+`);
         } catch (err: any) {
           console.warn('[BAILEYS] Permintaan pairing code:', err.message);
         }
