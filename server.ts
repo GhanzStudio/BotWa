@@ -13,6 +13,7 @@ import { startBaileysBot, getBotState } from './bot/lib/baileys.ts';
 import { getAllCommands, getCommandsByCategory, getTotalCommandsCount } from './bot/commands/index.ts';
 import { handleIncomingMessage } from './bot/lib/handler.ts';
 import { getAllMemoryUsers } from './bot/database/models/User.ts';
+import { getLiteDashboardHtml } from './bot/lib/liteDashboard.ts';
 import { exec } from 'child_process';
 import util from 'util';
 import { createRequire } from 'module';
@@ -240,9 +241,26 @@ async function startServer() {
     }
   });
 
+  // --- Lite Web Dashboard for Ultra-Fast Mobile & Termux Experience ---
+  app.get('/lite', (req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(getLiteDashboardHtml());
+  });
+
+  app.get('/pair-web', (req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(getLiteDashboardHtml());
+  });
+
   // --- Vite & Frontend Integration ---
-  const distPath = path.join(process.cwd(), 'dist');
-  const hasDist = fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'));
+  const distDir = path.join(process.cwd(), 'dist');
+  const docsDir = path.join(process.cwd(), 'docs');
+
+  const staticDir = fs.existsSync(path.join(distDir, 'index.html'))
+    ? distDir
+    : (fs.existsSync(path.join(docsDir, 'index.html')) ? docsDir : null);
+
+  const hasStatic = staticDir !== null;
 
   // Detect Android/Termux or production environment to serve precompiled lightweight bundle
   const isAndroidOrTermux = process.platform === 'android' || 
@@ -257,18 +275,19 @@ async function startServer() {
       appType: 'spa',
     });
     app.use(vite.middlewares);
-  } else if (hasDist) {
-    console.log('⚡ Dashboard mode: Melayani aset web pra-kompilasi (cepat, hemat RAM & anti layar putih)');
-    app.use(express.static(distPath));
+  } else if (hasStatic) {
+    console.log(`⚡ Dashboard mode: Melayani aset web pra-kompilasi dari ${path.basename(staticDir!)}/ (cepat, hemat RAM & anti layar putih)`);
+    app.use(express.static(staticDir!));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      res.sendFile(path.join(staticDir!, 'index.html'));
     });
   } else {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
+    // Zero-dependency fallback if static build doesn't exist
+    console.log('⚡ Dashboard mode: Melayani Lite Web Controller (zero-dependency fallback)');
+    app.get('*', (req, res) => {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(getLiteDashboardHtml());
     });
-    app.use(vite.middlewares);
   }
 
   app.listen(PORT, '0.0.0.0', () => {
