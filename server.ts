@@ -5,6 +5,7 @@
 
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { config } from './bot/config.ts';
 import { connectDB, getMongoStatus } from './bot/database/mongo.ts';

@@ -35,7 +35,7 @@ import defaultCommandsData from './commands-metadata.json';
 
 const defaultFallbackStatus: BotStatusData = {
   bot: {
-    status: 'STANDBY',
+    status: 'DISCONNECTED',
     qrCodeUrl: null,
     pairingCode: null,
     lastConnected: null,

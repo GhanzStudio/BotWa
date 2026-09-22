@@ -24,6 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 // server.ts
 var import_express = __toESM(require("express"), 1);
 var import_path2 = __toESM(require("path"), 1);
+var import_fs2 = __toESM(require("fs"), 1);
 var import_vite = require("vite");
 
 // bot/config.ts
@@ -5052,7 +5053,7 @@ async function startServer() {
     }
   });
   const distPath = import_path2.default.join(process.cwd(), "dist");
-  const hasDist = fs.existsSync(distPath) && fs.existsSync(import_path2.default.join(distPath, "index.html"));
+  const hasDist = import_fs2.default.existsSync(distPath) && import_fs2.default.existsSync(import_path2.default.join(distPath, "index.html"));
   const isAndroidOrTermux = process.platform === "android" || Boolean(process.env.TERMUX_VERSION) || Boolean(process.env.PREFIX && process.env.PREFIX.includes("termux")) || process.env.SERVE_STATIC === "true" || process.argv.includes("--static");
   if (process.env.NODE_ENV !== "production" && !isAndroidOrTermux) {
     const vite = await (0, import_vite.createServer)({
