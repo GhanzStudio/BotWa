@@ -9,7 +9,7 @@ import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { config } from './bot/config.ts';
 import { connectDB, getMongoStatus } from './bot/database/mongo.ts';
-import { startBaileysBot, getBotState } from './bot/lib/baileys.ts';
+import { startBaileysBot, getBotState, requestPairingCodeDirectly } from './bot/lib/baileys.ts';
 import { getAllCommands, getCommandsByCategory, getTotalCommandsCount } from './bot/commands/index.ts';
 import { handleIncomingMessage } from './bot/lib/handler.ts';
 import { getAllMemoryUsers } from './bot/database/models/User.ts';
@@ -92,8 +92,9 @@ async function startServer() {
       return res.status(400).json({ error: 'Nomor telepon WhatsApp diperlukan' });
     }
     try {
-      await startBaileysBot(phoneNumber);
-      res.json({ success: true, message: 'Permintaan pairing code dikirim. Menunggu kode...' });
+      const code = await requestPairingCodeDirectly(phoneNumber);
+      const formatted = code ? (code.match(/.{1,4}/g)?.join('-') || code) : code;
+      res.json({ success: true, code: formatted, rawCode: code, message: 'Kode pairing berhasil dibuat!' });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

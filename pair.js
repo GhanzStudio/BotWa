@@ -13,6 +13,7 @@ import pino from 'pino';
 import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 import QRCode from 'qrcode';
 
 const rl = readline.createInterface({
@@ -27,6 +28,12 @@ async function main() {
   console.log('\x1b[1;36m=================================================================\x1b[0m');
   console.log('\x1b[1;32m       🚀 GHANZ BOT MD - PENGHUBUNG WHATSAPP MULTI-DEVICE 🚀       \x1b[0m');
   console.log('\x1b[1;36m=================================================================\x1b[0m\n');
+
+  // Matikan proses server di background agar tidak terjadi bentrok kunci enkripsi session
+  try {
+    execSync('pkill -9 -f "server.ts" 2>/dev/null || true');
+    execSync('pkill -9 -f "server.cjs" 2>/dev/null || true');
+  } catch (_) {}
 
   const sessionPath = path.resolve(process.cwd(), './sessions');
   const credsFile = path.join(sessionPath, 'creds.json');
@@ -69,14 +76,20 @@ async function main() {
   let phone = rawPhone.replace(/\D/g, '');
   if (phone.startsWith('0')) {
     phone = '62' + phone.slice(1);
+  } else if (phone.startsWith('8')) {
+    phone = '62' + phone;
   }
 
   if (phone.length < 10) {
-    console.log('\x1b[1;31m❌ Nomor tidak valid! Masukkan nomor lengkap dengan kode negara, misal: 6281234567890\x1b[0m');
+    console.log('\x1b[1;31m❌ Nomor tidak valid! Masukkan nomor lengkap, misal: 081234567890 atau 6281234567890\x1b[0m');
     rl.close();
     process.exit(1);
   }
 
+  await startPairingSocket(sessionPath, phone);
+}
+
+async function startPairingSocket(sessionPath, phone) {
   console.log(`\n⏳ Menghubungkan ke server WhatsApp untuk nomor: \x1b[1;33m+${phone}\x1b[0m...`);
   console.log('⚠️  PENTING: Jangan tutup/minimize Termux selama proses penautan!\n');
 
@@ -93,12 +106,16 @@ async function main() {
     version,
     auth: state,
     printQRInTerminal: false,
-    browser: Browsers.ubuntu('Chrome'),
+    browser: Browsers.macOS('Desktop'),
     syncFullHistory: false,
     markOnlineOnConnect: false,
     connectTimeoutMs: 60000,
+    defaultQueryTimeoutMs: 60000,
     keepAliveIntervalMs: 30000,
-    retryRequestDelayMs: 3000
+    retryRequestDelayMs: 3000,
+    getMessage: async () => ({
+      conversation: 'P'
+    })
   });
 
   sock.ev.on('creds.update', saveCreds);
@@ -113,12 +130,19 @@ async function main() {
       console.log('\x1b[1;32m🎉 SELAMAT! BOT WHATSAPP BERHASIL TAUT / TERHUBUNG! 🎉\x1b[0m');
       console.log('\x1b[1;32m=================================================================\x1b[0m');
       console.log('✅ Kredensial telah disimpan permanen di folder sessions/.');
-      console.log('🚀 Sekarang jalankan bot kapan pun dengan perintah:\n');
-      console.log('   \x1b[1;33mnpm run termux\x1b[0m  (atau: node node_modules/tsx/dist/cli.mjs server.ts)\n');
+      console.log('🚀 Sekarang jalankan bot dengan mengetik:\n');
+      console.log('   \x1b[1;33mbash run.sh\x1b[0m  (atau: npm run termux)\n');
       rl.close();
       process.exit(0);
     } else if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
+      // Handle WhatsApp 515 restartRequired to finalize pairing handshake
+      if (statusCode === 515 || statusCode === DisconnectReason.restartRequired) {
+        console.log('🔄 \x1b[1;33mMenerima handshake dari WhatsApp (Status 515)... Menyambungkan kembali...\x1b[0m');
+        setTimeout(() => startPairingSocket(sessionPath, phone), 1000);
+        return;
+      }
+
       if (statusCode === DisconnectReason.loggedOut) {
         console.log('\x1b[1;31m❌ Sesi logout atau dibatalkan oleh WhatsApp.\x1b[0m');
       } else if (statusCode === 401 || statusCode === 408) {
@@ -150,9 +174,9 @@ async function main() {
         rl.close();
         process.exit(1);
       }
-    }, 3500);
+    }, 3000);
   } else {
-    console.log('✅ Akun bot sudah tersambung di folder sessions/. Langsung jalankan: npm run termux');
+    console.log('✅ Akun bot sudah tersambung di folder sessions/. Langsung jalankan: bash run.sh');
     rl.close();
     process.exit(0);
   }

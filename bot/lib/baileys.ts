@@ -39,6 +39,50 @@ export const botState: BotState = {
 
 let sockInstance: any = null;
 
+export async function requestPairingCodeDirectly(rawPhoneNumber: string): Promise<string> {
+  let cleanPhone = rawPhoneNumber.replace(/\D/g, '');
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '62' + cleanPhone.slice(1);
+  } else if (cleanPhone.startsWith('8')) {
+    cleanPhone = '62' + cleanPhone;
+  }
+
+  // Clear uncompleted session files before new pairing attempt
+  const sessionPath = path.resolve(process.cwd(), config.sessionDir || './sessions');
+  const credsFile = path.join(sessionPath, 'creds.json');
+  if (fs.existsSync(sessionPath)) {
+    let isRegistered = false;
+    if (fs.existsSync(credsFile)) {
+      try {
+        const creds = JSON.parse(fs.readFileSync(credsFile, 'utf-8'));
+        if (creds.registered && creds.me) isRegistered = true;
+      } catch (_) {}
+    }
+    if (!isRegistered) {
+      console.log('[BAILEYS] 🧹 Membersihkan sisa pairing sebelumnya untuk kode baru...');
+      try {
+        fs.rmSync(sessionPath, { recursive: true, force: true });
+        fs.mkdirSync(sessionPath, { recursive: true });
+      } catch (_) {}
+    }
+  }
+
+  botState.pairingCode = null;
+  botState.status = 'CONNECTING';
+
+  await startBaileysBot(cleanPhone);
+
+  // Poll for generated pairing code (up to 15 seconds)
+  for (let i = 0; i < 30; i++) {
+    if (botState.pairingCode) {
+      return botState.pairingCode;
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  throw new Error('Waktu permintaan kode pairing habis (timeout). Silakan periksa koneksi internet Termux dan coba lagi.');
+}
+
 export async function startBaileysBot(phoneNumberForPairing?: string): Promise<any> {
   try {
     if (sockInstance) {
@@ -71,13 +115,17 @@ export async function startBaileysBot(phoneNumberForPairing?: string): Promise<a
       version: version as any,
       auth: state,
       printQRInTerminal: false,
-      browser: Browsers.ubuntu('Chrome'),
+      browser: Browsers.macOS('Desktop'),
       syncFullHistory: false,
       markOnlineOnConnect: false,
       generateHighQualityLinkPreview: false,
-      connectTimeoutMs: 45000,
-      keepAliveIntervalMs: 25000,
-      retryRequestDelayMs: 3000
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 30000,
+      retryRequestDelayMs: 3000,
+      getMessage: async () => ({
+        conversation: 'P'
+      })
     });
 
     sockInstance = sock;
@@ -86,20 +134,25 @@ export async function startBaileysBot(phoneNumberForPairing?: string): Promise<a
     if (phoneNumberForPairing && !sock.authState.creds.registered) {
       setTimeout(async () => {
         try {
-          const cleanPhone = phoneNumberForPairing.replace(/\D/g, '');
+          let cleanPhone = phoneNumberForPairing.replace(/\D/g, '');
+          if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.slice(1);
+          else if (cleanPhone.startsWith('8')) cleanPhone = '62' + cleanPhone;
+
           const code = await sock.requestPairingCode(cleanPhone);
           botState.pairingCode = code;
           botState.status = 'PAIRING_READY';
+          const formatted = code ? code.match(/.{1,4}/g)?.join('-') : code;
           console.log(`
 ┌──────────────────────────────────────────────────┐
-│  🔑 KODE PAIRING WHATSAPP: ${code}              
-│  Nomor: ${cleanPhone}                            
+│  🔑 KODE PAIRING WHATSAPP: ${formatted}              
+│  Nomor: +${cleanPhone}                            
 │  👉 Buka WA > Titik 3 > Perangkat Tertaut       
 │     > Tautkan Perangkat > Tautkan dg nomor      
 └──────────────────────────────────────────────────┘
 `);
         } catch (err: any) {
           console.warn('[BAILEYS] Permintaan pairing code:', err.message);
+          botState.errorMessage = `Gagal pairing: ${err.message}`;
         }
       }, 3000);
     }
@@ -122,18 +175,30 @@ export async function startBaileysBot(phoneNumberForPairing?: string): Promise<a
 
       if (connection === 'close') {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        console.log(`[BAILEYS] Koneksi terputus. Status code: ${statusCode}`);
+
+        // Handle WhatsApp 515 restartRequired (Crucial for Pairing Code handshake)
+        if (statusCode === 515 || statusCode === DisconnectReason.restartRequired) {
+          console.log('[BAILEYS] 🔄 Handshake pairing diterima (Restart Required 515). Menyambungkan sesi otomatis...');
+          startBaileysBot();
+          return;
+        }
+
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== 401;
         botState.status = 'DISCONNECTED';
         botState.errorMessage = statusCode ? `Status ${statusCode}` : 'Koneksi terputus';
 
         if (shouldReconnect) {
           botState.reconnectAttempts += 1;
-          if (botState.reconnectAttempts <= 3) {
-            const delay = Math.min(30000, 4000 * botState.reconnectAttempts);
+          if (botState.reconnectAttempts <= 5) {
+            const delay = Math.min(20000, 3000 * botState.reconnectAttempts);
+            console.log(`[BAILEYS] Mencoba menyambung ulang dalam ${delay / 1000} detik...`);
             setTimeout(() => {
               startBaileysBot();
             }, delay);
           }
+        } else {
+          console.log('[BAILEYS] ❌ Sesi WhatsApp telah dikeluarkan (Logged Out). Silakan tautkan ulang.');
         }
       } else if (connection === 'open') {
         botState.status = 'CONNECTED';
@@ -141,7 +206,7 @@ export async function startBaileysBot(phoneNumberForPairing?: string): Promise<a
         botState.pairingCode = null;
         botState.lastConnected = new Date();
         botState.reconnectAttempts = 0;
-        console.log(`[BAILEYS] ✅ Bot terhubung ke WhatsApp Multi-Device!`);
+        console.log(`[BAILEYS] ✅ Bot BERHASIL TERHUBUNG ke WhatsApp Multi-Device!`);
       }
     });
 
