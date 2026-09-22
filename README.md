@@ -1,7 +1,7 @@
 # 🤖 Ghanz Bot Multi-Device (MD)
 
 > **WhatsApp Bot Multi-Fungsi yang Powerful, Modular, dan Ringan dibangun menggunakan Baileys Multi-Device & MongoDB.**  
-> Repository GitHub: [https://github.com/GhanzStudio/bot](https://github.com/GhanzStudio/BotWa)  
+> Repository GitHub: [https://github.com/GhanzStudio/BotWa](https://github.com/GhanzStudio/BotWa)  
 > Pengembang: **GhanzStudio**
 
 ---
@@ -183,4 +183,4 @@ Sesuai aturan pengembangan, bot ini secara ketat **TIDAK** menyertakan konten de
 
 ## 📜 Lisensi
 Dikembangkan oleh **GhanzStudio** di bawah lisensi Apache-2.0 / MIT.
-Repositori: [https://github.com/GhanzStudio/bot](https://github.com/GhanzStudio/BotWa)
+Repositori: [https://github.com/GhanzStudio/BotWa](https://github.com/GhanzStudio/BotWa)
