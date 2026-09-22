@@ -1,0 +1,6 @@
+{
+  "name": "WhatsApp Bot Multi-Fungsi",
+  "description": "WhatsApp Multi-Device bot built with Baileys, MongoDB, and full modular command system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

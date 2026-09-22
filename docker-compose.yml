@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: ghanz-wa-bot
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/whatsapp_bot
+      - BOT_NAME=Ghanz Bot MD
+      - PREFIX=.
+      - OWNER_NUMBER=6281234567890
+      - OWNER_NAME=GhanzStudio
+      - AUTO_READ=false
+      - AUTO_TYPING=true
+      - RATE_LIMIT_DELAY=1500
+    volumes:
+      - ./sessions:/app/sessions
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6.0
+    container_name: ghanz-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
