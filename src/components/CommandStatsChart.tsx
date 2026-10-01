@@ -94,8 +94,11 @@ export const CommandStatsChart: React.FC<{ onTestCommand?: (cmd: string) => void
     );
   }
 
-  const top1Command = data.popularCommands[0];
-  const avgDailyHits = Math.round(data.total7DaysHits / (data.dailyTrend.length || 7));
+  const popularCommands = data.popularCommands || [];
+  const dailyTrend = data.dailyTrend || [];
+  const top1Command = popularCommands[0] || { command: 'menu', totalHits: 0, category: 'ALL' };
+  const totalHits = data.total7DaysHits || 0;
+  const avgDailyHits = Math.round(totalHits / (dailyTrend.length || 7));
 
   return (
     <div className="space-y-6">
@@ -108,7 +111,7 @@ export const CommandStatsChart: React.FC<{ onTestCommand?: (cmd: string) => void
           <div>
             <span className="text-xs font-medium text-zinc-500">Total Perintah (7 Hari)</span>
             <div className="text-2xl font-black text-zinc-900 font-mono">
-              {data.total7DaysHits.toLocaleString('id-ID')} <span className="text-xs font-normal text-zinc-500">hits</span>
+              {totalHits.toLocaleString('id-ID')} <span className="text-xs font-normal text-zinc-500">hits</span>
             </div>
           </div>
         </div>
@@ -120,9 +123,9 @@ export const CommandStatsChart: React.FC<{ onTestCommand?: (cmd: string) => void
           <div>
             <span className="text-xs font-medium text-zinc-500">Fitur Paling Populer</span>
             <div className="text-lg font-black text-indigo-900 font-mono flex items-center gap-1.5">
-              .{top1Command?.command || 'ai'}
+              .{top1Command.command}
               <span className="text-xs font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
-                {top1Command?.totalHits || 0}x
+                {top1Command.totalHits || 0}x
               </span>
             </div>
           </div>
@@ -166,9 +169,9 @@ export const CommandStatsChart: React.FC<{ onTestCommand?: (cmd: string) => void
             </div>
 
             <div className="h-[320px] w-full pt-2">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
+              <ResponsiveContainer width="100%" height={320}>
                 <BarChart
-                  data={data.popularCommands.map(c => ({
+                  data={popularCommands.map(c => ({
                     name: `.${c.command}`,
                     hits: c.totalHits,
                     category: c.category
@@ -200,7 +203,7 @@ export const CommandStatsChart: React.FC<{ onTestCommand?: (cmd: string) => void
                     }}
                   />
                   <Bar dataKey="hits" radius={[6, 6, 0, 0]}>
-                    {data.popularCommands.map((_, idx) => (
+                    {popularCommands.map((_, idx) => (
                       <Cell key={`cell-${idx}`} fill={BAR_COLORS[idx % BAR_COLORS.length]} />
                     ))}
                   </Bar>
@@ -230,8 +233,8 @@ export const CommandStatsChart: React.FC<{ onTestCommand?: (cmd: string) => void
             </p>
 
             <div className="h-[240px] w-full">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={240}>
-                <BarChart data={data.dailyTrend} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={dailyTrend} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" />
                   <XAxis dataKey="label" tick={{ fill: '#52525b', fontSize: 10 }} />
                   <YAxis tick={{ fill: '#71717a', fontSize: 10 }} />
@@ -258,7 +261,7 @@ export const CommandStatsChart: React.FC<{ onTestCommand?: (cmd: string) => void
           <div className="mt-4 pt-3 border-t border-zinc-100">
             <h4 className="text-xs font-bold text-zinc-800 mb-2">10 Fitur Teratas:</h4>
             <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
-              {data.popularCommands.map((c, i) => (
+              {popularCommands.map((c, i) => (
                 <div key={c.command} className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-zinc-50 hover:bg-zinc-100/80 transition">
                   <div className="flex items-center gap-2">
                     <span className="w-4 h-4 rounded-full bg-zinc-200 text-zinc-700 font-bold text-[10px] flex items-center justify-center">
