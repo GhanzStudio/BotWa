@@ -26,9 +26,12 @@ import { beritaCommands } from './berita.ts';
 import { stalkerCommands } from './stalker.ts';
 import { ttsCommands } from './tts.ts';
 import { rpgCommands } from './rpg.ts';
+import { ownerCommands } from './owner.ts';
+import { utilityCommands } from './utility.ts';
 
 export const allCommands: BotCommand[] = [
   ...mainCommands,
+  ...ownerCommands,
   ...toolsCommands,
   ...gameCommands,
   ...downloadCommands,
@@ -49,7 +52,8 @@ export const allCommands: BotCommand[] = [
   ...beritaCommands,
   ...stalkerCommands,
   ...ttsCommands,
-  ...rpgCommands
+  ...rpgCommands,
+  ...utilityCommands
 ];
 
 const commandMap = new Map<string, BotCommand>();

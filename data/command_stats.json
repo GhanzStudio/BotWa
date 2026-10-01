@@ -1,0 +1,218 @@
+[
+  {
+    "command": "allmenu",
+    "category": "MAIN MENU",
+    "date": "2026-09-29",
+    "count": 1
+  },
+  {
+    "command": "ytmp3",
+    "category": "DOWNLOAD",
+    "date": "2026-09-29",
+    "count": 4
+  },
+  {
+    "command": "anime18",
+    "category": "ANIME",
+    "date": "2026-09-29",
+    "count": 3
+  },
+  {
+    "command": "claude",
+    "category": "AI",
+    "date": "2026-09-29",
+    "count": 2
+  },
+  {
+    "command": "gpt4o",
+    "category": "AI",
+    "date": "2026-09-29",
+    "count": 1
+  },
+  {
+    "command": "nightcore",
+    "category": "CONVERT",
+    "date": "2026-09-29",
+    "count": 1
+  },
+  {
+    "command": "donasi",
+    "category": "MAIN MENU",
+    "date": "2026-09-30",
+    "count": 4
+  },
+  {
+    "command": "ytmp3",
+    "category": "DOWNLOAD",
+    "date": "2026-09-30",
+    "count": 5
+  },
+  {
+    "command": "menu",
+    "category": "MAIN MENU",
+    "date": "2026-09-30",
+    "count": 5
+  },
+  {
+    "command": "waktu",
+    "category": "TOOLS",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "allmenu",
+    "category": "MAIN MENU",
+    "date": "2026-09-30",
+    "count": 2
+  },
+  {
+    "command": "berita",
+    "category": "BERITA",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "cnn",
+    "category": "BERITA",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "videoanime",
+    "category": "ANIME",
+    "date": "2026-09-30",
+    "count": 2
+  },
+  {
+    "command": "igstalk",
+    "category": "STALKER",
+    "date": "2026-09-30",
+    "count": 2
+  },
+  {
+    "command": "ytstalk",
+    "category": "STALKER",
+    "date": "2026-09-30",
+    "count": 3
+  },
+  {
+    "command": "benefitpremium",
+    "category": "MAIN MENU",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "mlstalk",
+    "category": "STALKER",
+    "date": "2026-09-30",
+    "count": 3
+  },
+  {
+    "command": "buatquotes",
+    "category": "CANVAS",
+    "date": "2026-09-30",
+    "count": 3
+  },
+  {
+    "command": "wastalk",
+    "category": "STALKER",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "profile",
+    "category": "USER",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "fakecall",
+    "category": "CANVAS",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "igstory",
+    "category": "CANVAS",
+    "date": "2026-09-30",
+    "count": 2
+  },
+  {
+    "command": "rankcard",
+    "category": "CANVAS",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "sertifikat",
+    "category": "CANVAS",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "welcomecard",
+    "category": "CANVAS",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "sroast",
+    "category": "CANVAS",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "balogo",
+    "category": "CANVAS",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "gempa",
+    "category": "INFO BOT",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "nightcore",
+    "category": "CONVERT",
+    "date": "2026-09-30",
+    "count": 2
+  },
+  {
+    "command": "setbirthday",
+    "category": "USER",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "birthdaylist",
+    "category": "USER",
+    "date": "2026-09-30",
+    "count": 2
+  },
+  {
+    "command": "training",
+    "category": "RPG",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "ping",
+    "category": "MAIN MENU",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "stats",
+    "category": "MAIN MENU",
+    "date": "2026-09-30",
+    "count": 1
+  },
+  {
+    "command": "promote",
+    "category": "GROUP",
+    "date": "2026-09-30",
+    "count": 2
+  }
+]

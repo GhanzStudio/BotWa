@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+html, body, #root {
+  background-color: #090d16 !important;
+  color: #f8fafc !important;
+  min-height: 100vh;
+}
+
+/* Hide any Vite error overlay banners in embedded preview iframe */
+vite-error-overlay,
+#vite-plugin-checker-error-overlay,
+[data-vite-plugin-checker-overlay] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

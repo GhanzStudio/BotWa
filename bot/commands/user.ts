@@ -3,27 +3,128 @@
  */
 
 import { BotCommand, CommandContext } from './types.ts';
+import { scanAndVerifyNumber, isConfiguredOwner } from '../database/models/User.ts';
 
 export const userCommands: BotCommand[] = [
   {
     name: 'profile',
-    aliases: ['me', 'profil'],
+    aliases: ['me', 'profil', 'scanprofile', 'scan', 'scannomor', 'cekno', 'cekuser'],
     category: 'USER',
-    description: 'Melihat kartu profil pengguna, saldo koin, level, dan limit',
-    usage: '.profile',
+    description: 'Pindai nomor telepon & verifikasi profil secara akurat (Membedakan Owner, VIP, dan User)',
+    usage: '.profile [nomor/@tag]',
     execute: async (ctx: CommandContext) => {
-      const { user } = ctx;
-      const status = user.premium ? '👑 PREMIUM (VIP)' : '👤 USER BIASA';
-      await ctx.reply(`👤 *KARTU PROFIL PENGGUNA*\n
-• Nama: ${user.name}
-• ID: ${user.id}
-• Status: ${status}
-• Level: ${user.level} (Exp: ${user.exp})
-• Koin: 🪙 ${user.koin.toLocaleString('id-ID')}
-• Limit: ⚡ ${user.premium ? 'Unlimited' : `${user.limit} tersisa`}
-• Terdaftar: ${user.registered ? 'Sudah Terverifikasi ✅' : 'Belum Terdaftar ❌'}
-• Ulang Tahun: ${user.birthday || 'Belum diatur'}
-• Total Command: ${user.totalHit || 0}x digunakan`);
+      // 1. Ekstrak target nomor yang dipindai (bisa nomor sendiri atau nomor yang di-tag/diinput)
+      let targetInput = ctx.args[0] || ctx.senderJid || (ctx.user ? ctx.user.id : '');
+      targetInput = String(targetInput).replace(/[@+]/g, '').trim();
+      if (!targetInput) {
+        targetInput = ctx.senderJid || '';
+      }
+
+      // 2. Lakukan proses scan nomor terhadap database
+      const scanResult = await scanAndVerifyNumber(targetInput, ctx.user?.name);
+      const { cleanNumber, cleanJid, formattedPhone, lid, isLid, matchedType, statusLabel, verificationDetail, synchronizationMessage, user } = scanResult;
+
+      // Keterangan identitas (membedakan Nomor Telepon HP asli dan ID Akun Multi-Device LID)
+      const idInfoBlock = lid
+        ? `📱 *Nomor HP:* ${formattedPhone}\n🆔 *ID Akun (LID):* ${lid}\n🌐 *JID:* ${cleanJid}\n`
+        : `📱 *Nomor:* ${formattedPhone}\n🌐 *JID:* ${cleanJid}\n`;
+
+      // JIKA HASIL SCAN ADALAH OWNER RESMI
+      if (matchedType === 'OWNER') {
+        return ctx.reply(
+          `🔍 *HASIL SCAN & VERIFIKASI NOMOR BOT* 🔍\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+          `${idInfoBlock}` +
+          `🛡️ *Hasil Scan Database:*\n` +
+          `   ➥ Status: *${statusLabel}*\n` +
+          `   ➥ Verifikasi: ${verificationDetail}\n` +
+          `   ➥ Sistem: ${synchronizationMessage}\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `👑 *KARTU PROFIL OWNER & DEVELOPER* 👑\n\n` +
+          `• Nama: ${user.name || 'GhanzStudio'} 👑\n` +
+          `• Nomor HP: ${formattedPhone}\n` +
+          (lid ? `• ID WhatsApp (LID): ${lid}\n` : '') +
+          `• Link WhatsApp: https://wa.me/${cleanNumber}\n` +
+          `• JID Akun: ${cleanJid}\n` +
+          `• Status Akun: 👑 OWNER / FOUNDER (SUPER ADMIN)\n` +
+          `• Hak Akses: 🛡️ FULL ROOT ACCESS (ALL PRIVILEGES)\n` +
+          `• Limit Energi: ⚡ Unlimited (Bebas Kuota Limit)\n` +
+          `• Saldo Koin: 🪙 Unlimited (Sultan Bot)\n` +
+          `• Level: 🎖️ Level 999 (Max Developer)\n` +
+          `• Terdaftar: Terverifikasi Permanen ✅\n` +
+          `• Mode: Bebas Cooldown & Anti-Spam Bypass\n` +
+          `• Total Perintah: ${user.totalHit || 0}x dijalankan\n\n` +
+          `╭───「 *HAK ISTIMEWA OWNER* 」\n` +
+          `│ 👑 Akses semua menu & command rahasia\n` +
+          `│ 📢 Siaran pesan massal (${ctx.prefix}bc)\n` +
+          `│ 💎 Simpan auto-prem (${ctx.prefix}addprem / ${ctx.prefix}delprem)\n` +
+          `│ ⚡ Tambah limit & koin (${ctx.prefix}addlimit / ${ctx.prefix}addkoin)\n` +
+          `│ 🚫 Ban & unban pengguna (${ctx.prefix}ban / ${ctx.prefix}unban)\n` +
+          `│ 💻 Eksekusi kode dinamis (${ctx.prefix}eval)\n` +
+          `│ 🧹 Pembersihan cache & memori (${ctx.prefix}cleartmp)\n` +
+          `╰───────────────────────────────`
+        );
+      }
+
+      // JIKA HASIL SCAN ADALAH AUTO-PREMIUM / VIP
+      if (matchedType === 'PREMIUM') {
+        return ctx.reply(
+          `🔍 *HASIL SCAN & VERIFIKASI NOMOR BOT* 🔍\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+          `${idInfoBlock}` +
+          `💎 *Hasil Scan Database:*\n` +
+          `   ➥ Status: *${statusLabel}*\n` +
+          `   ➥ Verifikasi: ${verificationDetail}\n` +
+          `   ➥ Sistem: ${synchronizationMessage}\n` +
+          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `👑 *KARTU PROFIL USER PREMIUM (VIP)* 👑\n\n` +
+          `• Nama: ${user.name || 'VIP Member'}\n` +
+          `• Nomor HP: ${formattedPhone}\n` +
+          (lid ? `• ID WhatsApp (LID): ${lid}\n` : '') +
+          `• Link WhatsApp: https://wa.me/${cleanNumber}\n` +
+          `• JID Akun: ${cleanJid}\n` +
+          `• Status: 👑 PREMIUM (VIP MEMBER)\n` +
+          `• Auto-Prem Chat: *AKTIF ✅* (Otomatis VIP saat chat)\n` +
+          `• Limit Energi: ⚡ Unlimited (999.999)\n` +
+          `• Saldo Koin: 🪙 ${Number(user.koin || 0).toLocaleString('id-ID')}\n` +
+          `• Level: 🎖️ Level ${user.level || 1} (Exp: ${user.exp || 0})\n` +
+          `• Masa Aktif: VIP Selamanya / Auto-Prem Permanen ✨\n` +
+          `• Terdaftar: Sudah Terverifikasi ✅\n` +
+          `• Total Perintah: ${user.totalHit || 0}x digunakan\n\n` +
+          `╭───「 *KEUNTUNGAN VIP PREMIUM* 」\n` +
+          `│ ⚡ Limit energi tanpa batas (999.999)\n` +
+          `│ 🚀 Prioritas antrean downloader & AI\n` +
+          `│ 🔓 Akses penuh seluruh menu VIP bot\n` +
+          `│ 💎 Auto-Prem aktif setiap kali mengirim chat\n` +
+          `╰───────────────────────────────`
+        );
+      }
+
+      // JIKA HASIL SCAN ADALAH USER REGULER / TERVERIFIKASI DARI SCAN WA
+      return ctx.reply(
+        `🔍 *HASIL SCAN & VERIFIKASI NOMOR BOT* 🔍\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `${idInfoBlock}` +
+        `ℹ️ *Hasil Scan Database:*\n` +
+        `   ➥ Status: *${statusLabel}*\n` +
+        `   ➥ Verifikasi: ${verificationDetail}\n` +
+        `   ➥ Sistem: ${synchronizationMessage}\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `👤 *KARTU PROFIL PENGGUNA*\n\n` +
+        `• Nama: ${user.name || 'Pengguna'}\n` +
+        `• Nomor HP: ${formattedPhone}\n` +
+        (lid ? `• ID WhatsApp (LID): ${lid}\n` : '') +
+        `• Link WhatsApp: https://wa.me/${cleanNumber}\n` +
+        `• JID Akun: ${cleanJid}\n` +
+        `• Status: 👤 USER BIASA\n` +
+        `• Level: ${user.level || 1} (Exp: ${user.exp || 0})\n` +
+        `• Koin: 🪙 ${Number(user.koin || 0).toLocaleString('id-ID')}\n` +
+        `• Limit: ⚡ ${user.limit || 0} tersisa\n` +
+        `• Terdaftar: ${user.registered ? 'Sudah Terverifikasi ✅' : 'Belum Terdaftar ❌'}\n` +
+        `• Ulang Tahun: ${user.birthday || 'Belum diatur'}\n` +
+        `• Total Command: ${user.totalHit || 0}x digunakan\n\n` +
+        `💡 *Tips:* Hubungi Owner untuk simpan nomormu ke database Auto-Prem agar mendapatkan status *👑 VIP PREMIUM* otomatis setiap kali chat!`
+      );
     }
   },
   {
@@ -95,8 +196,12 @@ export const userCommands: BotCommand[] = [
     description: 'Mengecek sisa kuota limit energi hari ini',
     usage: '.energi',
     execute: async (ctx: CommandContext) => {
-      const { user } = ctx;
-      if (user.premium) {
+      const { user, isOwner } = ctx;
+      const isRealOwner = isOwner && isConfiguredOwner(ctx.senderJid || user.id);
+      if (isRealOwner) {
+        return ctx.reply(`⚡ *LIMIT ENERGI*: Unlimited (Owner & Creator Bebas Biaya Kuota 👑)`);
+      }
+      if (user.premium || user.role === 'premium') {
         return ctx.reply(`⚡ *LIMIT ENERGI*: Unlimited (Akun Premium VIP ✨)`);
       }
       await ctx.reply(`⚡ *SISA ENERGI / LIMIT KAMU*\n\nSisa: *${user.limit} limit*\nReset berkala: Setiap pukul 00:00 WIB\n\n_Ketik ${ctx.prefix}buyenergi untuk membeli tambahan limit dengan koin!_`);
@@ -109,6 +214,11 @@ export const userCommands: BotCommand[] = [
     description: 'Cek saldo koin ekonomi kamu',
     usage: '.koin',
     execute: async (ctx: CommandContext) => {
+      const { user, isOwner } = ctx;
+      const isRealOwner = isOwner && isConfiguredOwner(ctx.senderJid || user.id);
+      if (isRealOwner) {
+        return ctx.reply(`🪙 Saldo koin kamu: *Unlimited (Sultan Owner Bebas Belanja 👑)*`);
+      }
       await ctx.reply(`🪙 Saldo koin kamu: *${ctx.user.koin.toLocaleString('id-ID')} koin*`);
     }
   },
@@ -118,6 +228,11 @@ export const userCommands: BotCommand[] = [
     description: 'Cek jumlah experience (Exp) karaktermu',
     usage: '.exp',
     execute: async (ctx: CommandContext) => {
+      const { user, isOwner } = ctx;
+      const isRealOwner = isOwner && isConfiguredOwner(ctx.senderJid || user.id);
+      if (isRealOwner) {
+        return ctx.reply(`🎖️ Exp kamu saat ini: *Max Exp (Owner Status 👑)* (Level 999)`);
+      }
       await ctx.reply(`🎖️ Exp kamu saat ini: *${ctx.user.exp} Exp* (Level ${ctx.user.level})`);
     }
   },
@@ -127,6 +242,11 @@ export const userCommands: BotCommand[] = [
     description: 'Melihat progres level saat ini',
     usage: '.level',
     execute: async (ctx: CommandContext) => {
+      const { user, isOwner } = ctx;
+      const isRealOwner = isOwner && isConfiguredOwner(ctx.senderJid || user.id);
+      if (isRealOwner) {
+        return ctx.reply(`📈 Level kamu: *Level 999 (Max Developer / Creator 👑)*`);
+      }
       await ctx.reply(`📈 Level kamu: *Level ${ctx.user.level}*\nDibutuhkan ${(ctx.user.level * 500) - ctx.user.exp} Exp lagi untuk naik level.`);
     }
   },

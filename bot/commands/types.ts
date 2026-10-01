@@ -5,6 +5,8 @@
 export interface CommandContext {
   sock?: any;
   m?: any;
+  senderJid?: string;
+  quotedUserJid?: string;
   user: any;
   group?: any;
   args: string[];
@@ -18,6 +20,10 @@ export interface CommandContext {
   isAdmin: boolean;
   isBotAdmin: boolean;
   reply: (text: string, options?: any) => Promise<any>;
+  sendAudio?: (audioUrlOrBuffer: string | Buffer, ptt?: boolean, caption?: string) => Promise<any>;
+  sendVideo?: (videoUrlOrBuffer: string | Buffer, caption?: string) => Promise<any>;
+  sendImage?: (imageUrlOrBuffer: string | Buffer, caption?: string) => Promise<any>;
+  sendSticker?: (stickerBufferOrUrl: string | Buffer) => Promise<any>;
   react?: (emoji: string) => Promise<any>;
 }
 

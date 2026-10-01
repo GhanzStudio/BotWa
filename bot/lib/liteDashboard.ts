@@ -199,6 +199,29 @@ export function getLiteDashboardHtml(): string {
         <button type="button" class="btn btn-danger" id="clearBtn">🗑️ Reset Sesi WA</button>
       </div>
     </div>
+
+    <!-- 18+ Approvals & Auto-Prem Card for Lite Controller -->
+    <div class="card">
+      <h2 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+        <span>🔞 Persetujuan 18+ & VIP Premium</span>
+        <button type="button" class="btn btn-secondary" onclick="loadLiteApprovals()" style="width: auto; padding: 4px 10px; font-size: 0.75rem;">🔄 Refresh</button>
+      </h2>
+
+      <!-- Form Input Quick ACC 18+ -->
+      <form id="acc18Form" style="margin-bottom: 14px;">
+        <label for="accGroupJid">ID JID Grup / No. HP untuk ACC 18+:</label>
+        <input type="text" id="accGroupJid" placeholder="120363xxx@g.us" required>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button type="submit" class="btn" style="background: #e11d48;">✅ ACC 18+</button>
+          <button type="button" class="btn btn-secondary" onclick="handleLiteReject18()">❌ Cabut 18+</button>
+        </div>
+      </form>
+
+      <div id="pending18Box" style="margin-top: 10px;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: #f43f5e; margin-bottom: 6px;">📋 Permohonan Pending 18+:</div>
+        <div id="pending18List" style="font-size: 0.82rem; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">Memuat data...</div>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toast">Notifikasi</div>
@@ -375,6 +398,72 @@ export function getLiteDashboardHtml(): string {
         showToast('❌ Gagal reset sesi');
       }
     });
+
+    // 18+ Approvals JS logic
+    async function loadLiteApprovals() {
+      try {
+        const res = await fetch('/api/18plus-requests');
+        if (!res.ok) return;
+        const data = await res.json();
+        const box = document.getElementById('pending18List');
+        if (!data.pending || data.pending.length === 0) {
+          box.innerHTML = '<span style="color:#10b981;">✅ Tidak ada permohonan 18+ yang pending.</span> (' + (data.approvedCount || 0) + ' grup aktif ACC)';
+          return;
+        }
+        let html = '';
+        data.pending.forEach(p => {
+          html += '<div style="margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center;">';
+          html += '<div><strong>' + (p.name || 'Grup WhatsApp') + '</strong><br><span style="font-size:0.75rem; font-family:monospace; color:#94a3b8;">' + p.id + '</span></div>';
+          html += '<button type="button" onclick="acc18Group(\'' + p.id + '\')" class="btn" style="width:auto; padding:4px 12px; font-size:0.75rem; background:#10b981;">ACC</button>';
+          html += '</div>';
+        });
+        box.innerHTML = html;
+      } catch(e) {}
+    }
+
+    async function acc18Group(jid) {
+      try {
+        const res = await fetch('/api/18plus-requests/acc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ groupId: jid })
+        });
+        const data = await res.json();
+        showToast(data.message || 'Berhasil di-ACC!');
+        loadLiteApprovals();
+      } catch(e) {
+        showToast('Gagal: ' + e.message);
+      }
+    }
+
+    async function handleLiteReject18() {
+      const jid = document.getElementById('accGroupJid').value;
+      if (!jid) return showToast('Masukkan ID JID Grup');
+      try {
+        const res = await fetch('/api/18plus-requests/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ groupId: jid })
+        });
+        const data = await res.json();
+        showToast(data.message || 'Izin dicabut.');
+        loadLiteApprovals();
+      } catch(e) {
+        showToast('Gagal: ' + e.message);
+      }
+    }
+
+    document.getElementById('acc18Form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const jid = document.getElementById('accGroupJid').value;
+      if (jid) acc18Group(jid);
+    });
+
+    // Initial load
+    updateStatus();
+    loadLiteApprovals();
+    setInterval(updateStatus, 3000);
+    setInterval(loadLiteApprovals, 5000);
   </script>
 </body>
 </html>`;

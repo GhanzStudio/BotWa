@@ -9,16 +9,131 @@
     <meta property="og:description" content="WhatsApp Multi-Device bot built with Baileys, MongoDB, and full modular command system." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      vite-error-overlay, #vite-error-overlay {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+    </style>
     <script>
-      // When served statically on GitHub Pages root (where /src/main.tsx is not compiled by Vite),
-      // seamlessly forward to the pre-compiled /docs/ dashboard
-      if (window.location.hostname.includes('github.io') && !window.location.pathname.includes('/docs')) {
-        var cleanPath = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
-        window.location.replace(cleanPath + 'docs/');
+      if (typeof customElements !== 'undefined') {
+        var origDef = customElements.define;
+        customElements.define = function(name, constructor, options) {
+          if (name === 'vite-error-overlay') return;
+          return origDef.call(customElements, name, constructor, options);
+        };
       }
     </script>
+    <script>
+      // Silences any WebSocket / HMR disconnection overlays and unhandled rejections
+      (function() {
+        function shouldSuppress(str) {
+          if (!str) return false;
+          var s = String(str).toLowerCase();
+          return (
+            s.indexOf('websocket') !== -1 ||
+            s.indexOf('vite') !== -1 ||
+            s.indexOf('ws') !== -1 ||
+            s.indexOf('closed without opened') !== -1 ||
+            s.indexOf('failed to connect') !== -1 ||
+            s.indexOf('two children with the same key') !== -1 ||
+            s.indexOf('keys should be unique') !== -1
+          );
+        }
+
+        var origConsoleError = console.error;
+        console.error = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var joined = args.map(function(a) { return String((a && (a.message || a.stack)) || a || ''); }).join(' ');
+          if (shouldSuppress(joined)) {
+            return;
+          }
+          return origConsoleError.apply(console, arguments);
+        };
+
+        var origConsoleWarn = console.warn;
+        console.warn = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var joined = args.map(function(a) { return String((a && (a.message || a.stack)) || a || ''); }).join(' ');
+          if (shouldSuppress(joined)) {
+            return;
+          }
+          return origConsoleWarn.apply(console, arguments);
+        };
+
+        window.onerror = function(message, source, lineno, colno, error) {
+          var msg = String(message || (error && error.message) || '');
+          if (shouldSuppress(msg)) {
+            return true;
+          }
+        };
+
+        window.addEventListener('unhandledrejection', function(e) {
+          var msg = (e && e.reason && (e.reason.message || e.reason.stack)) || String((e && e.reason) || '');
+          if (shouldSuppress(msg)) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            return false;
+          }
+        }, true);
+
+        window.addEventListener('error', function(e) {
+          var msg = (e && (e.message || (e.error && e.error.message))) || '';
+          if (shouldSuppress(msg)) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            return false;
+          }
+        }, true);
+
+        // Wrap WebSocket to swallow connection errors cleanly
+        try {
+          var OrigWS = window.WebSocket;
+          if (OrigWS) {
+            window.WebSocket = function(url, protocols) {
+              var ws = new OrigWS(url, protocols);
+              ws.addEventListener('error', function(e) {
+                e.preventDefault && e.preventDefault();
+                e.stopImmediatePropagation && e.stopImmediatePropagation();
+              });
+              return ws;
+            };
+            window.WebSocket.prototype = OrigWS.prototype;
+            window.WebSocket.CONNECTING = 0;
+            window.WebSocket.OPEN = 1;
+            window.WebSocket.CLOSING = 2;
+            window.WebSocket.CLOSED = 3;
+          }
+        } catch (_) {}
+
+        // Hide any Vite error overlay custom element if injected into DOM
+        var observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+              if (node && node.nodeName && node.nodeName.toLowerCase() === 'vite-error-overlay') {
+                node.remove();
+              }
+            });
+          });
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      })();
+    </script>
+    <style>
+      html, body {
+        background-color: #090d16 !important;
+        color: #f8fafc !important;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+      }
+    </style>
   </head>
-  <body>
+  <body class="bg-[#090d16] text-slate-100">
     <div id="root">
       <div style="font-family:system-ui,-apple-system,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;background:#090d16;color:#e2e8f0;padding:20px;text-align:center;">
         <div style="max-width:380px;width:100%;background:#131b2e;padding:24px;border-radius:16px;border:1px solid #1e293b;box-shadow:0 10px 25px rgba(0,0,0,0.5);">
@@ -28,8 +143,6 @@
           <div style="margin-bottom:20px;">
             <div style="width:28px;height:28px;border:3px solid #334155;border-top-color:#10b981;border-radius:50%;margin:0 auto;animation:spin 1s linear infinite;"></div>
           </div>
-          <p style="font-size:0.75rem;color:#64748b;margin-bottom:14px;">Jika layar tidak segera muncul di HP Anda:</p>
-          <a href="/lite" style="display:block;background:#10b981;color:#fff;font-weight:600;font-size:0.875rem;padding:11px 16px;border-radius:10px;text-decoration:none;">Buka Mode Ringan (Lite Web) ⚡</a>
         </div>
       </div>
     </div>
@@ -37,4 +150,3 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

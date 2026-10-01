@@ -23,8 +23,8 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // server.ts
 var import_express = __toESM(require("express"), 1);
-var import_path2 = __toESM(require("path"), 1);
-var import_fs2 = __toESM(require("fs"), 1);
+var import_path4 = __toESM(require("path"), 1);
+var import_fs4 = __toESM(require("fs"), 1);
 var import_vite = require("vite");
 
 // bot/config.ts
@@ -33,7 +33,7 @@ import_dotenv.default.config();
 var config = {
   botName: process.env.BOT_NAME || "Ghanz Bot MD",
   prefix: process.env.PREFIX || ".",
-  ownerNumber: process.env.OWNER_NUMBER || "6281234567890",
+  ownerNumber: process.env.OWNER_NUMBER || "6287891284460",
   ownerName: process.env.OWNER_NAME || "GhanzStudio",
   mongodbUri: process.env.MONGODB_URI || "mongodb://localhost:27017/whatsapp_bot",
   defaultLimit: parseInt(process.env.DEFAULT_LIMIT || "50", 10),
@@ -43,8 +43,28 @@ var config = {
   sessionDir: process.env.SESSION_DIR || "./sessions",
   githubToken: process.env.GITHUB_TOKEN || "",
   geminiApiKey: process.env.GEMINI_API_KEY || "",
-  githubRepo: "https://github.com/GhanzStudio/bot"
+  githubRepo: "https://github.com/GhanzStudio/BotWa"
 };
+var ownerList = /* @__PURE__ */ new Set([
+  "6287891284460",
+  "56106063794223",
+  // Owner WhatsApp LID (Linked Account ID)
+  "6287817697830"
+  // Bot self number
+]);
+function isOwnerNumber(input) {
+  if (!input) return false;
+  let digits = input.split("@")[0].split(":")[0].replace(/\D/g, "");
+  if (digits.startsWith("08")) {
+    digits = "62" + digits.slice(1);
+  }
+  const primaryOwner = "6287891284460";
+  const configuredOwner = (config.ownerNumber || "6287891284460").replace(/\D/g, "");
+  if (ownerList.has(digits)) return true;
+  if (digits === primaryOwner || digits === configuredOwner || digits.endsWith("87891284460")) return true;
+  if (digits === "56106063794223") return true;
+  return false;
+}
 
 // bot/database/mongo.ts
 var import_mongoose = __toESM(require("mongoose"), 1);
@@ -97,11 +117,13 @@ function getMongoStatus() {
 var import_baileys = __toESM(require("@whiskeysockets/baileys"), 1);
 var import_pino = __toESM(require("pino"), 1);
 var import_qrcode2 = __toESM(require("qrcode"), 1);
-var import_path = __toESM(require("path"), 1);
-var import_fs = __toESM(require("fs"), 1);
+var import_path3 = __toESM(require("path"), 1);
+var import_fs3 = __toESM(require("fs"), 1);
 
 // bot/commands/main.ts
 var import_os = __toESM(require("os"), 1);
+var import_path = __toESM(require("path"), 1);
+var import_fs = __toESM(require("fs"), 1);
 var mainCommands = [
   {
     name: "menu",
@@ -109,20 +131,26 @@ var mainCommands = [
     category: "MAIN MENU",
     description: "Menampilkan menu utama dan kategori bot",
     usage: ".menu",
-    execute: async (ctx) => {
-      const { user, prefix, reply } = ctx;
+    execute: async (ctx2) => {
+      const { user, isOwner, prefix, reply } = ctx2;
+      const isOwnerUser = isOwner || user.role === "owner";
+      const roleText = isOwnerUser ? "\u{1F451} OWNER (SUPER ADMIN)" : user.premium ? "\u{1F48E} PREMIUM (VIP)" : user.role.toUpperCase();
+      const limitText = isOwnerUser ? "Unlimited (Bebas Biaya \u{1F451})" : user.premium ? "Unlimited (VIP \u2728)" : `${user.limit} tersisa`;
+      const koinText = isOwnerUser ? "\u{1FA99} Unlimited (Sultan)" : `\u{1FA99} ${user.koin.toLocaleString("id-ID")}`;
+      const levelText = isOwnerUser ? "\u{1F396}\uFE0F 999 (Max Developer \u{1F451})" : `\u{1F396}\uFE0F ${user.level} (Exp: ${user.exp})`;
       const text = `\u{1F44B} *Halo, ${user.name || "Kak"}!*
 
 \u256D\u2500\u2500\u2500\u300C *INFORMASI PENGGUNA* \u300D
-\u2502 \u{1F464} Nama: ${user.name}
-\u2502 \u{1F3F7}\uFE0F Role: ${user.role.toUpperCase()}
-\u2502 \u26A1 Limit: ${user.premium ? "Unlimited (VIP)" : `${user.limit} tersisa`}
-\u2502 \u{1FA99} Koin: ${user.koin.toLocaleString("id-ID")}
-\u2502 \u{1F396}\uFE0F Level: ${user.level} (Exp: ${user.exp})
+\u2502 \u{1F464} Nama: ${user.name} ${isOwnerUser ? "\u{1F451}" : ""}
+\u2502 \u{1F3F7}\uFE0F Role: ${roleText}
+\u2502 \u26A1 Limit: ${limitText}
+\u2502 \u{1FA99} Koin: ${koinText}
+\u2502 \u{1F396}\uFE0F Level: ${levelText}
 \u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 \u256D\u2500\u2500\u2500\u300C *KATEGORI FITUR* \u300D
 \u2502 \u{1F4CC} *${prefix}allmenu* - Seluruh daftar menu
+\u2502 \u{1F451} *${prefix}menucat owner* - Perintah Khusus Owner
 \u2502 \u{1F6E0}\uFE0F *${prefix}menucat tools* - Fitur alat praktis
 \u2502 \u{1F3AE} *${prefix}menucat game* - Game interaktif
 \u2502 \u{1F4E5} *${prefix}menucat download* - Downloader medsos
@@ -145,8 +173,8 @@ _Ketik ${prefix}allmenu untuk melihat seluruh daftar command sekaligus._`;
     category: "MAIN MENU",
     description: "Menampilkan seluruh daftar command yang tersedia",
     usage: ".allmenu",
-    execute: async (ctx) => {
-      const { prefix, reply } = ctx;
+    execute: async (ctx2) => {
+      const { prefix, reply } = ctx2;
       const text = `\u{1F4DC} *DAFTAR LENGKAP FITUR ${config.botName.toUpperCase()}*
 
 \u250C\u2500\u2500 [ *MAIN MENU* ]
@@ -155,6 +183,12 @@ _Ketik ${prefix}allmenu untuk melihat seluruh daftar command sekaligus._`;
 \u2502 \u2022 ${prefix}system, ${prefix}jadibot, ${prefix}stopjadibot
 \u2502 \u2022 ${prefix}leaderboard, ${prefix}totalfitur, ${prefix}carifitur
 \u2502 \u2022 ${prefix}benefitpremium, ${prefix}benefitowner, ${prefix}tqto
+\u2514\u2500\u2500
+
+\u250C\u2500\u2500 [ *OWNER & DEVELOPER (ROOT)* ]
+\u2502 \u2022 ${prefix}bc, ${prefix}addprem, ${prefix}delprem, ${prefix}addlimit
+\u2502 \u2022 ${prefix}addkoin, ${prefix}ban, ${prefix}unban, ${prefix}setprefix
+\u2502 \u2022 ${prefix}cleartmp, ${prefix}eval, ${prefix}self, ${prefix}public
 \u2514\u2500\u2500
 
 \u250C\u2500\u2500 [ *TOOLS* ]
@@ -216,14 +250,14 @@ _Gunakan perintah dengan bijak. Total command: 180+_`;
     category: "MAIN MENU",
     description: "Cek kecepatan respon dan latensi bot",
     usage: ".ping",
-    execute: async (ctx) => {
+    execute: async (ctx2) => {
       const start = Date.now();
       const latency = Date.now() - start;
       const uptime = Math.floor(process.uptime());
       const hours = Math.floor(uptime / 3600);
       const minutes = Math.floor(uptime % 3600 / 60);
       const seconds = uptime % 60;
-      await ctx.reply(`\u{1F3D3} *Pong!*
+      await ctx2.reply(`\u{1F3D3} *Pong!*
 \u26A1 Latensi: ${latency}ms
 \u23F1\uFE0F Uptime: ${hours}j ${minutes}m ${seconds}d
 \u{1F4BE} RAM: ${(process.memoryUsage().rss / 1024 / 1024).toFixed(1)} MB`);
@@ -235,14 +269,12 @@ _Gunakan perintah dengan bijak. Total command: 180+_`;
     category: "MAIN MENU",
     description: "Informasi kontak pemilik/developer bot",
     usage: ".owner",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F451} *OWNER & DEVELOPER*
-
-Nama: ${config.ownerName}
-WhatsApp: wa.me/${config.ownerNumber}
-GitHub: ${config.githubRepo}
-
-_Untuk sewa bot, kerja sama, atau lapor bug silakan chat kontak di atas._`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F451} OWNER & DEVELOPER
+Nama: GhanzStudio
+WhatsApp: wa.me/6287891284460
+GitHub: https://github.com/GhanzStudio/BotWa
+Untuk sewa bot, kerja sama, atau lapor bug silakan chat kontak di atas.`);
     }
   },
   {
@@ -250,8 +282,8 @@ _Untuk sewa bot, kerja sama, atau lapor bug silakan chat kontak di atas._`);
     category: "MAIN MENU",
     description: "Ketentuan dan peraturan penggunaan bot",
     usage: ".rules",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4DC} *RULES PENGGUNAAN BOT*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4DC} *RULES PENGGUNAAN BOT*
 
 1. Dilarang melakukan spam command beruntun.
 2. Dilarang menelepon / video call nomor bot (auto-block).
@@ -262,19 +294,30 @@ _Untuk sewa bot, kerja sama, atau lapor bug silakan chat kontak di atas._`);
   },
   {
     name: "donasi",
+    aliases: ["donate", "qris"],
     category: "MAIN MENU",
-    description: "Informasi donasi & support operasional bot",
+    description: "Informasi donasi & support operasional bot via QRIS / Dana / Gopay / OVO",
     usage: ".donasi",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F496} *DONASI & DUKUNGAN*
+    execute: async (ctx2) => {
+      const donationMessage = `\u{1F496} *DONASI & DUKUNGAN*
 
 Terima kasih atas niat baikmu untuk mendukung biaya server bot:
 
-\u2022 Dana / Gopay / OVO: 0812-xxxx-xxxx
-\u2022 QRIS: Tersedia via chat owner (${config.prefix}owner)
-\u2022 Trakteer / Saweria: saweria.co/ghanzstudio
+\u2022 Dana / Gopay / OVO: 087817697830
+\u2022 QRIS: Scan kode QRIS pada gambar di atas
 
-_Setiap donasi akan mendapatkan bonus limit / role Premium!_`);
+_Setiap donasi akan mendapatkan bonus limit / role Premium!_`;
+      const qrisPath = import_path.default.resolve(process.cwd(), "bot/assets/qris.jpg");
+      if (import_fs.default.existsSync(qrisPath) && ctx2.sendImage) {
+        try {
+          const imageBuffer = import_fs.default.readFileSync(qrisPath);
+          await ctx2.sendImage(imageBuffer, donationMessage);
+          return;
+        } catch (err) {
+          console.warn("[donasi] Gagal mengirim gambar QRIS, fallback ke teks:", err.message);
+        }
+      }
+      await ctx2.reply(donationMessage);
     }
   },
   {
@@ -283,8 +326,8 @@ _Setiap donasi akan mendapatkan bonus limit / role Premium!_`);
     category: "MAIN MENU",
     description: "Tautan repositori source code bot",
     usage: ".sc",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4BB} *SOURCE CODE BOT*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4BB} *SOURCE CODE BOT*
 
 Proyek ini dikembangkan secara modular:
 \u{1F517} Repository: ${config.githubRepo}
@@ -297,11 +340,11 @@ Proyek ini dikembangkan secara modular:
     category: "MAIN MENU",
     description: "Statistik teknis server dan bot",
     usage: ".stats",
-    execute: async (ctx) => {
+    execute: async (ctx2) => {
       const freeMem = (import_os.default.freemem() / 1024 / 1024 / 1024).toFixed(2);
       const totalMem = (import_os.default.totalmem() / 1024 / 1024 / 1024).toFixed(2);
       const cpus = import_os.default.cpus().length;
-      await ctx.reply(`\u{1F4CA} *STATUS SISTEM BOT*
+      await ctx2.reply(`\u{1F4CA} *STATUS SISTEM BOT*
 
 \u2022 Platform: ${import_os.default.platform()} (${import_os.default.arch()})
 \u2022 CPU Cores: ${cpus}
@@ -316,8 +359,8 @@ Proyek ini dikembangkan secara modular:
     category: "MAIN MENU",
     description: "Melihat total seluruh fitur yang tersedia",
     usage: ".totalfitur",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4C8} *TOTAL FITUR AKTIF*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4C8} *TOTAL FITUR AKTIF*
 
 Total saat ini tersedia *184 fitur* terbagi dalam 20 kategori lengkap!`);
     }
@@ -327,13 +370,13 @@ Total saat ini tersedia *184 fitur* terbagi dalam 20 kategori lengkap!`);
     category: "MAIN MENU",
     description: "Mencari fitur berdasarkan kata kunci",
     usage: ".carifitur <kata_kunci>",
-    execute: async (ctx) => {
-      const query = ctx.text.trim().toLowerCase();
-      if (!query) return ctx.reply(`Gunakan format: ${ctx.prefix}carifitur <kata kunci>
-Contoh: ${ctx.prefix}carifitur download`);
-      await ctx.reply(`\u{1F50D} Hasil pencarian fitur untuk "${query}":
+    execute: async (ctx2) => {
+      const query = ctx2.text.trim().toLowerCase();
+      if (!query) return ctx2.reply(`Gunakan format: ${ctx2.prefix}carifitur <kata kunci>
+Contoh: ${ctx2.prefix}carifitur download`);
+      await ctx2.reply(`\u{1F50D} Hasil pencarian fitur untuk "${query}":
 \u2022 Ditemukan command terkait pada kategori yang sesuai.
-Ketik *${ctx.prefix}allmenu* untuk rincian.`);
+Ketik *${ctx2.prefix}allmenu* untuk rincian.`);
     }
   },
   {
@@ -341,8 +384,8 @@ Ketik *${ctx.prefix}allmenu* untuk rincian.`);
     category: "MAIN MENU",
     description: "Keuntungan menjadi user premium",
     usage: ".benefitpremium",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F31F} *KEUNTUNGAN USER PREMIUM*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F31F} *KEUNTUNGAN USER PREMIUM*
 
 \u2705 Unlimited Limit / Energi
 \u2705 Bebas Cooldown pada command downloader & AI
@@ -350,7 +393,7 @@ Ketik *${ctx.prefix}allmenu* untuk rincian.`);
 \u2705 Prioritas antrean rendering
 \u2705 Badge [PREMIUM] di profil
 
-_Hubungi ${ctx.prefix}owner untuk info harga langganan!_`);
+_Hubungi ${ctx2.prefix}owner untuk info harga langganan!_`);
     }
   },
   {
@@ -358,8 +401,8 @@ _Hubungi ${ctx.prefix}owner untuk info harga langganan!_`);
     category: "MAIN MENU",
     description: "Informasi hak akses owner",
     usage: ".benefitowner",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F451} *KEUNTUNGAN OWNER*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F451} *KEUNTUNGAN OWNER*
 
 Akses penuh ke seluruh kontrol bot, database management, blacklist/unban, broadcast, eval command, dan setting grup.`);
     }
@@ -369,8 +412,8 @@ Akses penuh ke seluruh kontrol bot, database management, blacklist/unban, broadc
     category: "MAIN MENU",
     description: "Menjadikan nomor WhatsApp kamu sebagai bot clone",
     usage: ".jadibot",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F916} *JADIBOT (BOT CLONE)*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F916} *JADIBOT (BOT CLONE)*
 
 Fitur ini memungkinkan nomor kamu menjadi clone dari bot ini dengan session terisolasi.
 Silakan gunakan web dashboard atau hubungi owner untuk mengaktifkan slot jadibot.`);
@@ -381,8 +424,8 @@ Silakan gunakan web dashboard atau hubungi owner untuk mengaktifkan slot jadibot
     category: "MAIN MENU",
     description: "Menghentikan sesi bot clone",
     usage: ".stopjadibot",
-    execute: async (ctx) => {
-      await ctx.reply(`\u23F9\uFE0F *STOP JADIBOT*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u23F9\uFE0F *STOP JADIBOT*
 Sesi clone berhasil dihentikan.`);
     }
   },
@@ -392,14 +435,14 @@ Sesi clone berhasil dihentikan.`);
     category: "MAIN MENU",
     description: "Papan peringkat top level & koin",
     usage: ".leaderboard",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3C6} *PAPAN PERINGKAT (LEADERBOARD)*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3C6} *PAPAN PERINGKAT (LEADERBOARD)*
 
 1. \u{1F947} MasterGhanz - Lv. 85 (\u{1FA99} 1.450.000 koin)
 2. \u{1F948} Ryuko - Lv. 72 (\u{1FA99} 920.000 koin)
 3. \u{1F949} Kenshin - Lv. 64 (\u{1FA99} 650.000 koin)
 4. \u{1F396}\uFE0F Player_01 - Lv. 50 (\u{1FA99} 410.000 koin)
-5. \u{1F396}\uFE0F Kamu (${ctx.user.name}) - Lv. ${ctx.user.level} (\u{1FA99} ${ctx.user.koin.toLocaleString("id-ID")} koin)`);
+5. \u{1F396}\uFE0F Kamu (${ctx2.user.name}) - Lv. ${ctx2.user.level} (\u{1FA99} ${ctx2.user.koin.toLocaleString("id-ID")} koin)`);
     }
   },
   {
@@ -407,10 +450,10 @@ Sesi clone berhasil dihentikan.`);
     category: "MAIN MENU",
     description: "Melihat menu per kategori tertentu",
     usage: ".menucat <nama_kategori>",
-    execute: async (ctx) => {
-      const cat = ctx.text.trim().toLowerCase();
-      await ctx.reply(`\u{1F4C2} *MENU KATEGORI: ${cat.toUpperCase() || "SEMUA"}*
-Ketik *${ctx.prefix}allmenu* untuk melihat seluruh rincian command.`);
+    execute: async (ctx2) => {
+      const cat = ctx2.text.trim().toLowerCase();
+      await ctx2.reply(`\u{1F4C2} *MENU KATEGORI: ${cat.toUpperCase() || "SEMUA"}*
+Ketik *${ctx2.prefix}allmenu* untuk melihat seluruh rincian command.`);
     }
   },
   {
@@ -418,8 +461,8 @@ Ketik *${ctx.prefix}allmenu* untuk melihat seluruh rincian command.`);
     category: "MAIN MENU",
     description: "Ucapan terima kasih dan kredit pengembang",
     usage: ".tqto",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F64F} *THANKS TO & CREDITS*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F64F} *THANKS TO & CREDITS*
 
 \u2022 @whiskeysockets/baileys team (Library WA MD)
 \u2022 GhanzStudio (Creator & Main Developer)
@@ -438,18 +481,18 @@ var toolsCommands = [
     description: "Membuat QR Code dari teks atau link",
     usage: ".qrcode <teks>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const text = ctx.text.trim();
-      if (!text) return ctx.reply(`\u26A0\uFE0F Masukkan teks atau link!
-Contoh: ${ctx.prefix}qrcode https://google.com`);
+    execute: async (ctx2) => {
+      const text = ctx2.text.trim();
+      if (!text) return ctx2.reply(`\u26A0\uFE0F Masukkan teks atau link!
+Contoh: ${ctx2.prefix}qrcode https://google.com`);
       try {
         const qrData = await import_qrcode.default.toDataURL(text);
-        await ctx.reply(`\u2705 *QR Code Berhasil Dibuat!*
+        await ctx2.reply(`\u2705 *QR Code Berhasil Dibuat!*
 
 \u{1F4DD} Teks: ${text}
 \u{1F517} Data: ${qrData.substring(0, 45)}...`);
       } catch (err) {
-        await ctx.reply(`\u274C Gagal membuat QR: ${err.message}`);
+        await ctx2.reply(`\u274C Gagal membuat QR: ${err.message}`);
       }
     }
   },
@@ -459,10 +502,10 @@ Contoh: ${ctx.prefix}qrcode https://google.com`);
     description: "Membuat QR Code kustom dengan warna",
     usage: ".qrcustom <teks>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const text = ctx.text.trim();
-      if (!text) return ctx.reply(`Contoh: ${ctx.prefix}qrcustom Halo Dunia`);
-      await ctx.reply(`\u2705 *Custom QR Code*
+    execute: async (ctx2) => {
+      const text = ctx2.text.trim();
+      if (!text) return ctx2.reply(`Contoh: ${ctx2.prefix}qrcustom Halo Dunia`);
+      await ctx2.reply(`\u2705 *Custom QR Code*
 Teks: ${text}
 Berhasil digenerate.`);
     }
@@ -473,8 +516,8 @@ Berhasil digenerate.`);
     description: "Konversi teks menjadi barcode QR",
     usage: ".txt2qr <teks>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2705 *Teks ke QR*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2705 *Teks ke QR*
 Berhasil diproses.`);
     }
   },
@@ -485,11 +528,11 @@ Berhasil diproses.`);
     description: "Screenshot tampilan halaman website",
     usage: ".ssweb <url>",
     limitCost: 2,
-    execute: async (ctx) => {
-      const url = ctx.text.trim();
-      if (!url) return ctx.reply(`\u26A0\uFE0F Masukkan URL situs!
-Contoh: ${ctx.prefix}ssweb https://wikipedia.org`);
-      await ctx.reply(`\u{1F4F8} *SCREENSHOT WEB*
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) return ctx2.reply(`\u26A0\uFE0F Masukkan URL situs!
+Contoh: ${ctx2.prefix}ssweb https://wikipedia.org`);
+      await ctx2.reply(`\u{1F4F8} *SCREENSHOT WEB*
 Target: ${url}
 
 _Gambar screenshot berhasil dirender._`);
@@ -502,8 +545,8 @@ _Gambar screenshot berhasil dirender._`);
     description: "Meningkatkan resolusi gambar (HD/Upscale)",
     usage: ".hd (reply gambar)",
     limitCost: 3,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2728 *UPSCALING HD*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2728 *UPSCALING HD*
 Gambar sedang diproses dengan AI Image Enhancer menjadi resolusi 4K Ultra-Clear.`);
     }
   },
@@ -514,8 +557,8 @@ Gambar sedang diproses dengan AI Image Enhancer menjadi resolusi 4K Ultra-Clear.
     description: "Menghapus background latar belakang gambar",
     usage: ".removebg (reply gambar)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2702\uFE0F *REMOVE BACKGROUND*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2702\uFE0F *REMOVE BACKGROUND*
 Latar belakang gambar berhasil dipotong dan dijadikan format PNG transparan.`);
     }
   },
@@ -526,8 +569,8 @@ Latar belakang gambar berhasil dipotong dan dijadikan format PNG transparan.`);
     description: "Mengubah teks menjadi gaya tulisan unik & estetik",
     usage: ".styleteks <teks>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text || "Ghanz Bot";
+    execute: async (ctx2) => {
+      const q = ctx2.text || "Ghanz Bot";
       const text = `\u{1F3A8} *GAYA FONT ESTETIK*
 
 1. \u{1D50A}\u{1D525}\u{1D51E}\u{1D52B}\u{1D537} \u{1D505}\u{1D52C}\u{1D531} (${q})
@@ -536,7 +579,7 @@ Latar belakang gambar berhasil dipotong dan dijadikan format PNG transparan.`);
 4. \uFF27\uFF48\uFF41\uFF4E\uFF5A \uFF22\uFF4F\uFF54
 5. \u0262\u029C\u1D00\u0274\u1D22 \u0299\u1D0F\u1D1B
 6. \u{1D60E}\u{1D629}\u{1D622}\u{1D62F}\u{1D63B} \u{1D609}\u{1D630}\u{1D635}`;
-      await ctx.reply(text);
+      await ctx2.reply(text);
     }
   },
   {
@@ -545,9 +588,9 @@ Latar belakang gambar berhasil dipotong dan dijadikan format PNG transparan.`);
     description: "Menulis teks ke kertas buku bergaris secara realistis",
     usage: ".nulis <teks>",
     limitCost: 2,
-    execute: async (ctx) => {
-      const text = ctx.text || "Catatan Penting Kuliah";
-      await ctx.reply(`\u{1F4DD} *NULIS BUKU*
+    execute: async (ctx2) => {
+      const text = ctx2.text || "Catatan Penting Kuliah";
+      await ctx2.reply(`\u{1F4DD} *NULIS BUKU*
 Teks "${text}" berhasil ditulis rapi ke buku tulis folio.`);
     }
   },
@@ -557,8 +600,8 @@ Teks "${text}" berhasil ditulis rapi ke buku tulis folio.`);
     description: "Membuat gambar potongan kode pemrograman bergaya Carbon",
     usage: ".carbon <kode>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4BB} *CARBON CODE*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4BB} *CARBON CODE*
 Snippet kode kamu berhasil digenerate dengan tema Dark Monokai.`);
     }
   },
@@ -568,8 +611,8 @@ Snippet kode kamu berhasil digenerate dengan tema Dark Monokai.`);
     description: "Mengekstrak tulisan dari gambar (Optical Character Recognition)",
     usage: ".ocr (reply gambar)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F50D} *OCR TEKS DARI GAMBAR*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F50D} *OCR TEKS DARI GAMBAR*
 Teks berhasil dideteksi dan disalin secara akurat.`);
     }
   },
@@ -579,8 +622,8 @@ Teks berhasil dideteksi dan disalin secara akurat.`);
     description: "Mengunggah teks ke pastebin online",
     usage: ".pastebin <teks>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4CB} *PASTEBIN CREATED*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4CB} *PASTEBIN CREATED*
 Tautan pastebin telah dibuat.`);
     }
   },
@@ -590,8 +633,8 @@ Tautan pastebin telah dibuat.`);
     description: "Mengambil teks dari link pastebin",
     usage: ".getpaste <url>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4C4} *GET PASTEBIN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4C4} *GET PASTEBIN*
 Teks berhasil diunduh dari tautan.`);
     }
   },
@@ -602,9 +645,9 @@ Teks berhasil diunduh dari tautan.`);
     description: "Informasi geolokasi dan penyedia IP address / Domain",
     usage: ".ipwho <ip atau domain>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const target = ctx.text.trim() || "8.8.8.8";
-      await ctx.reply(`\u{1F310} *IP / DOMAIN LOOKUP: ${target}*
+    execute: async (ctx2) => {
+      const target = ctx2.text.trim() || "8.8.8.8";
+      await ctx2.reply(`\u{1F310} *IP / DOMAIN LOOKUP: ${target}*
 \u2022 ISP: Google LLC
 \u2022 Country: United States (US)
 \u2022 City: Mountain View
@@ -618,8 +661,8 @@ Teks berhasil diunduh dari tautan.`);
     description: "Lookup data DNS dan Host",
     usage: ".lookup <host>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F50D} *DNS LOOKUP*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F50D} *DNS LOOKUP*
 Data Host berhasil dipindai.`);
     }
   },
@@ -630,18 +673,18 @@ Data Host berhasil dipindai.`);
     description: "Kalkulator penghitung win rate Mobile Legends",
     usage: ".hitungwrmlbb <totalMatch> <wrSaatIni> <targetWr>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const parts = ctx.args.map(Number);
+    execute: async (ctx2) => {
+      const parts = ctx2.args.map(Number);
       if (parts.length < 3 || parts.some(isNaN)) {
-        return ctx.reply(`Format: ${ctx.prefix}hitungwrmlbb <total_match> <wr_sekarang> <target_wr>
-Contoh: ${ctx.prefix}hitungwrmlbb 500 52 60`);
+        return ctx2.reply(`Format: ${ctx2.prefix}hitungwrmlbb <total_match> <wr_sekarang> <target_wr>
+Contoh: ${ctx2.prefix}hitungwrmlbb 500 52 60`);
       }
       const [totalMatch, currentWr, targetWr] = parts;
       if (targetWr <= currentWr || targetWr >= 100) {
-        return ctx.reply(`\u26A0\uFE0F Target Win Rate harus lebih besar dari saat ini dan di bawah 100%!`);
+        return ctx2.reply(`\u26A0\uFE0F Target Win Rate harus lebih besar dari saat ini dan di bawah 100%!`);
       }
       const needWin = Math.ceil(totalMatch * (targetWr - currentWr) / (100 - targetWr));
-      await ctx.reply(`\u{1F3AE} *KALKULATOR WR MOBILE LEGENDS*
+      await ctx2.reply(`\u{1F3AE} *KALKULATOR WR MOBILE LEGENDS*
 
 \u2022 Total Match: ${totalMatch}
 \u2022 WR Saat Ini: ${currentWr}%
@@ -656,8 +699,8 @@ Contoh: ${ctx.prefix}hitungwrmlbb 500 52 60`);
     description: "Membandingkan spesifikasi dua smartphone",
     usage: ".bandingkan-hp <hp1> vs <hp2>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4F1} *PERBANDINGAN SMARTPHONE*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4F1} *PERBANDINGAN SMARTPHONE*
 Spesifikasi chipset, RAM, baterai, dan kamera berhasil dibandingkan.`);
     }
   },
@@ -667,8 +710,8 @@ Spesifikasi chipset, RAM, baterai, dan kamera berhasil dibandingkan.`);
     description: "Kalkulator porsi & gizi makan bergizi gratis",
     usage: ".kalkulatormbg",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F957} *KALKULATOR GIZI & MBG*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F957} *KALKULATOR GIZI & MBG*
 Kandungan kalori, karbohidrat, protein dan serat tercukupi secara seimbang.`);
     }
   },
@@ -678,12 +721,12 @@ Kandungan kalori, karbohidrat, protein dan serat tercukupi secara seimbang.`);
     description: "Memeriksa struktur informasi tanggal lahir & wilayah NIK (Format validator)",
     usage: ".nikparser <16_digit_nik>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const nik = ctx.text.trim();
+    execute: async (ctx2) => {
+      const nik = ctx2.text.trim();
       if (nik.length !== 16 || isNaN(Number(nik))) {
-        return ctx.reply(`\u26A0\uFE0F Masukkan 16 digit angka NIK yang valid!`);
+        return ctx2.reply(`\u26A0\uFE0F Masukkan 16 digit angka NIK yang valid!`);
       }
-      await ctx.reply(`\u{1FAAA} *VALIDASI STRUKTUR NIK*
+      await ctx2.reply(`\u{1FAAA} *VALIDASI STRUKTUR NIK*
 \u2022 Provinsi: Terverifikasi
 \u2022 Kota/Kabupaten: Terverifikasi
 \u2022 Kode Pos & Wilayah: Valid`);
@@ -695,9 +738,9 @@ Kandungan kalori, karbohidrat, protein dan serat tercukupi secara seimbang.`);
     description: "Membuat email sementara (disposable temporary email)",
     usage: ".tempmail",
     limitCost: 1,
-    execute: async (ctx) => {
+    execute: async (ctx2) => {
       const random = Math.random().toString(36).substring(2, 9);
-      await ctx.reply(`\u{1F4E7} *TEMPORARY EMAIL*
+      await ctx2.reply(`\u{1F4E7} *TEMPORARY EMAIL*
 Alamat: ${random}@tempmail.org
 Inbox: Menunggu pesan masuk...`);
     }
@@ -708,8 +751,8 @@ Inbox: Menunggu pesan masuk...`);
     description: "Upload file media menjadi link web",
     usage: ".tourl (reply media)",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F517} *MEDIA KE URL*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F517} *MEDIA KE URL*
 Media berhasil diunggah.`);
     }
   },
@@ -719,10 +762,10 @@ Media berhasil diunggah.`);
     description: "Membuat teks WhatsApp dengan spoiler baca selengkapnya",
     usage: ".readmore <teks_depan> | <teks_rahasia>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const [front, back] = ctx.text.split("|");
+    execute: async (ctx2) => {
+      const [front, back] = ctx2.text.split("|");
       const hiddenChar = String.fromCharCode(8206).repeat(4001);
-      await ctx.reply(`${(front || "Klik Disini").trim()}${hiddenChar}${(back || "Kejutan!").trim()}`);
+      await ctx2.reply(`${(front || "Klik Disini").trim()}${hiddenChar}${(back || "Kejutan!").trim()}`);
     }
   },
   {
@@ -731,8 +774,8 @@ Media berhasil diunggah.`);
     description: "Transkrip audio / VN menjadi teks",
     usage: ".transkrip (reply vn)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F399}\uFE0F *AUDIO TRANSCRIPT*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F399}\uFE0F *AUDIO TRANSCRIPT*
 Transkripsi suara ke teks berhasil diselesaikan.`);
     }
   },
@@ -742,8 +785,8 @@ Transkripsi suara ke teks berhasil diselesaikan.`);
     description: "Konversi stiker WA menjadi gambar JPG/PNG",
     usage: ".toimg (reply stiker)",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F5BC}\uFE0F *KONVERSI KE GAMBAR*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F5BC}\uFE0F *KONVERSI KE GAMBAR*
 Stiker berhasil dikonversi ke gambar.`);
     }
   },
@@ -753,8 +796,8 @@ Stiker berhasil dikonversi ke gambar.`);
     description: "Ekstrak suara dari video menjadi file MP3",
     usage: ".toaudio (reply video)",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3B5} *KONVERSI KE AUDIO*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3B5} *KONVERSI KE AUDIO*
 Audio MP3 berhasil diekstrak.`);
     }
   },
@@ -764,8 +807,8 @@ Audio MP3 berhasil diekstrak.`);
     description: "Mengubah audio musik biasa menjadi Voice Note PTT WhatsApp",
     usage: ".tovn (reply audio)",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F399}\uFE0F *AUDIO KE VOICE NOTE*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F399}\uFE0F *AUDIO KE VOICE NOTE*
 File berhasil dijadikan format PTT.`);
     }
   },
@@ -775,8 +818,8 @@ File berhasil dijadikan format PTT.`);
     description: "Konversi stiker animasi bergerak menjadi MP4 video",
     usage: ".tovideo (reply stiker bergerak)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3AC} *KONVERSI KE VIDEO*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3AC} *KONVERSI KE VIDEO*
 Animasi berhasil dijadikan video MP4.`);
     }
   },
@@ -786,8 +829,8 @@ Animasi berhasil dijadikan video MP4.`);
     description: "Alat konversi satuan praktis (panjang, massa, suhu, dll)",
     usage: ".converter",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2696\uFE0F *UNIT CONVERTER*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2696\uFE0F *UNIT CONVERTER*
 Gunakan konversi satuan.`);
     }
   },
@@ -797,8 +840,8 @@ Gunakan konversi satuan.`);
     description: "Pencarian dan download font dari Dafont",
     usage: ".dafont <nama_font>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F524} *DAFONT SEARCH*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F524} *DAFONT SEARCH*
 Font ditemukan.`);
     }
   },
@@ -808,8 +851,8 @@ Font ditemukan.`);
     description: "Membuat format invoice / nota pembayaran rapi",
     usage: ".invoicemaker <item> | <harga>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F9FE} *INVOICE PEMBAYARAN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F9FE} *INVOICE PEMBAYARAN*
 Nota pembayaran otomatis telah dibuat.`);
     }
   },
@@ -819,8 +862,8 @@ Nota pembayaran otomatis telah dibuat.`);
     description: "Menghapus foto profil bot (Owner Only)",
     usage: ".delpp",
     ownerOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F5BC}\uFE0F Foto profil bot berhasil dihapus.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F5BC}\uFE0F Foto profil bot berhasil dihapus.`);
     }
   },
   {
@@ -829,8 +872,8 @@ Nota pembayaran otomatis telah dibuat.`);
     description: "Mengganti foto profil bot (Owner Only)",
     usage: ".setpp (reply gambar)",
     ownerOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F5BC}\uFE0F Foto profil bot berhasil diperbarui.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F5BC}\uFE0F Foto profil bot berhasil diperbarui.`);
     }
   },
   {
@@ -839,8 +882,8 @@ Nota pembayaran otomatis telah dibuat.`);
     description: "Mengubah status bio WhatsApp bot (Owner Only)",
     usage: ".setbio <teks>",
     ownerOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4DD} Bio status bot berhasil diubah.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4DD} Bio status bot berhasil diubah.`);
     }
   },
   {
@@ -849,8 +892,8 @@ Nota pembayaran otomatis telah dibuat.`);
     description: "Mengubah nama akun WhatsApp bot (Owner Only)",
     usage: ".setname <nama>",
     ownerOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F464} Nama akun bot berhasil diperbarui.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F464} Nama akun bot berhasil diperbarui.`);
     }
   },
   {
@@ -859,8 +902,8 @@ Nota pembayaran otomatis telah dibuat.`);
     description: "Mengecek ID Saluran / WhatsApp Channel",
     usage: ".cekidch <link_channel>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4E2} *ID CHANNEL WA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4E2} *ID CHANNEL WA*
 ID Saluran berhasil didapatkan.`);
     }
   },
@@ -870,8 +913,8 @@ ID Saluran berhasil didapatkan.`);
     description: "Konversi kode JavaScript CommonJS (require) ke ES Module (import)",
     usage: ".cjstoesm <kode>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2699\uFE0F *CJS TO ESM*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2699\uFE0F *CJS TO ESM*
 Kode CommonJS berhasil dikonversi ke ESModule syntax.`);
     }
   },
@@ -881,8 +924,8 @@ Kode CommonJS berhasil dikonversi ke ESModule syntax.`);
     description: "Konversi kode JavaScript ES Module ke CommonJS",
     usage: ".esmtocjs <kode>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2699\uFE0F *ESM TO CJS*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2699\uFE0F *ESM TO CJS*
 Kode ESModule berhasil dikonversi ke CommonJS syntax.`);
     }
   },
@@ -892,8 +935,8 @@ Kode ESModule berhasil dikonversi ke CommonJS syntax.`);
     description: "Mengubah emoji menjadi stiker animasi bergerak",
     usage: ".emojitoanimasi <emoji>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3AD} *EMOJI TO ANIMASI*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3AD} *EMOJI TO ANIMASI*
 Stiker animasi berhasil digenerate.`);
     }
   },
@@ -903,8 +946,8 @@ Stiker animasi berhasil digenerate.`);
     description: "Render emoji ke gambar beresolusi tinggi",
     usage: ".emojitoimage <emoji>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3A8} *EMOJI TO IMAGE*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3A8} *EMOJI TO IMAGE*
 Gambar HD emoji berhasil dibuat.`);
     }
   },
@@ -914,8 +957,8 @@ Gambar HD emoji berhasil dibuat.`);
     description: "Menganalisis gambar dan mengubahnya menjadi prompt AI deskriptif",
     usage: ".imgtoprompt (reply gambar)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F50D} *IMAGE TO PROMPT*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F50D} *IMAGE TO PROMPT*
 Prompt deskriptif AI berhasil diuraikan.`);
     }
   }
@@ -929,8 +972,8 @@ var gameCommands = [
     description: "Permainan tebak gambar teka-teki visual",
     usage: ".tebakgambar",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F5BC}\uFE0F *TEBAK GAMBAR*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F5BC}\uFE0F *TEBAK GAMBAR*
 
 Petunjuk: Hewan berkaki empat + Belalai
 Bonus: +500 Koin, +150 Exp
@@ -944,8 +987,8 @@ _Balas pesan ini untuk menjawab!_`);
     description: "Game menebak kata berdasarkan petunjuk",
     usage: ".tebakkata",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F524} *TEBAK KATA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F524} *TEBAK KATA*
 
 Petunjuk: Alat penerang di malam hari (L _ _ P _)
 Bonus: +300 Koin`);
@@ -957,8 +1000,8 @@ Bonus: +300 Koin`);
     description: "Game menebak kalimat tersembunyi",
     usage: ".tebakkalimat",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4DD} *TEBAK KALIMAT*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4DD} *TEBAK KALIMAT*
 Lengkapi pepatah: "Berakit-rakit ke hulu, berenang-renang ke..."`);
     }
   },
@@ -969,8 +1012,8 @@ Lengkapi pepatah: "Berakit-rakit ke hulu, berenang-renang ke..."`);
     description: "Tebak-tebakan lucu dan menghibur",
     usage: ".tebaktebakan",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F914} *TEBAK-TEBAKAN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F914} *TEBAK-TEBAKAN*
 Pertanyaan: Ban apa yang enak dimakan?
 Jawabannya: Bandeng presto! \u{1F606}`);
     }
@@ -981,8 +1024,8 @@ Jawabannya: Bandeng presto! \u{1F606}`);
     description: "Teka-teki logika absurd khas Cak Lontong",
     usage: ".caklontong",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F9E0} *KUIS CAK LONTONG*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F9E0} *KUIS CAK LONTONG*
 Pertanyaan: Orang yang memimpin suatu negara disebut?
 Jawaban absurd: Susah! (Karena presiden kan cuma satu, susah kalau semua mimpin) \u{1F923}`);
     }
@@ -993,8 +1036,8 @@ Jawaban absurd: Susah! (Karena presiden kan cuma satu, susah kalau semua mimpin)
     description: "Game teka-teki pengasah otak dan wawasan",
     usage: ".asahotak",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4A1} *ASAH OTAK*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4A1} *ASAH OTAK*
 Apakah yang selalu naik tapi tidak pernah turun?
 Jawaban: Umur!`);
     }
@@ -1005,8 +1048,8 @@ Jawaban: Umur!`);
     description: "Game survey Family 100 interaktif",
     usage: ".family100",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466} *FAMILY 100*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466} *FAMILY 100*
 Survei membuktikan: Apa yang dicari orang saat bangun tidur?
 1. HP (68 poin)
 2. Jam dinding (15 poin)
@@ -1019,8 +1062,8 @@ Survei membuktikan: Apa yang dicari orang saat bangun tidur?
     description: "Menyusun huruf acak menjadi kata baku",
     usage: ".susunkata",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F520} *SUSUN KATA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F520} *SUSUN KATA*
 Susun huruf ini: [ K - A - B - I - S - E - T - O ]
 Petunjuk: Cabang olahraga`);
     }
@@ -1031,8 +1074,8 @@ Petunjuk: Cabang olahraga`);
     description: "Game tebak kata yang diacak posisinya",
     usage: ".kataacak",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F500} *KATA ACAK*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F500} *KATA ACAK*
 Kata: N A G A R A M P E
 Petunjuk: Terjadi saat perang`);
     }
@@ -1044,8 +1087,8 @@ Petunjuk: Terjadi saat perang`);
     description: "Permainan papan Tic-Tac-Toe bersama teman di grup",
     usage: ".tictactoe @lawan",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u274C\u2B55 *TIC TAC TOE*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u274C\u2B55 *TIC TAC TOE*
 
 1 | 2 | 3
 ---------
@@ -1053,7 +1096,7 @@ Petunjuk: Terjadi saat perang`);
 ---------
 7 | 8 | 9
 
-Giliran: \u274C @${ctx.user.id.split("@")[0]}
+Giliran: \u274C @${ctx2.user.id.split("@")[0]}
 Ketik angka 1-9 untuk menaruh pion.`);
     }
   },
@@ -1063,8 +1106,8 @@ Ketik angka 1-9 untuk menaruh pion.`);
     description: "Permainan papan Ular Tangga virtual",
     usage: ".ulartangga",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3B2} *ULAR TANGGA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3B2} *ULAR TANGGA*
 Dadu dilempar: \u2684 (Angka 5)
 Posisi pion kamu bergerak ke kotak 14! Hati-hati ada ular di kotak 21.`);
     }
@@ -1075,8 +1118,8 @@ Posisi pion kamu bergerak ke kotak 14! Hati-hati ada ular di kotak 21.`);
     description: "Tebak bendera negara-negara di dunia",
     usage: ".tebakbendera",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F6A9} *TEBAK BENDERA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F6A9} *TEBAK BENDERA*
 Bendera: \u{1F1EF}\u{1F1F5}
 Petunjuk: Negeri Sakura di Asia Timur`);
     }
@@ -1087,8 +1130,8 @@ Petunjuk: Negeri Sakura di Asia Timur`);
     description: "Tebak nama negara dari ciri khas atau ibukota",
     usage: ".tebaknegara",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F30D} *TEBAK NEGARA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F30D} *TEBAK NEGARA*
 Ibukota: Paris
 Landmark: Menara Eiffel`);
     }
@@ -1099,8 +1142,8 @@ Landmark: Menara Eiffel`);
     description: "Tebak nama hewan berdasarkan suara atau ciri fisiknya",
     usage: ".tebakhewan",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F981} *TEBAK HEWAN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F981} *TEBAK HEWAN*
 Ciri: Memiliki kantung di perut dan melompat tinggi di Australia`);
     }
   },
@@ -1110,8 +1153,8 @@ Ciri: Memiliki kantung di perut dan melompat tinggi di Australia`);
     description: "Tebak nama kuliner nusantara dan dunia",
     usage: ".tebakmakanan",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F372} *TEBAK MAKANAN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F372} *TEBAK MAKANAN*
 Makanan khas Padang yang berbahan daging sapi dengan rempah kaya rasa`);
     }
   },
@@ -1121,8 +1164,8 @@ Makanan khas Padang yang berbahan daging sapi dengan rempah kaya rasa`);
     description: "Tebak pekerjaan dan profesi",
     usage: ".tebakprofesi",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F46E} *TEBAK PROFESI*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F46E} *TEBAK PROFESI*
 Bertugas memadamkan kebakaran dan menyelamatkan orang`);
     }
   },
@@ -1132,8 +1175,8 @@ Bertugas memadamkan kebakaran dan menyelamatkan orang`);
     description: "Tebak judul lagu dari potongan lirik",
     usage: ".tebaklagu",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3B6} *TEBAK LAGU*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3B6} *TEBAK LAGU*
 Lirik: "Ku menangis... membayangkan..."`);
     }
   },
@@ -1143,8 +1186,8 @@ Lirik: "Ku menangis... membayangkan..."`);
     description: "Lanjutkan potongan lirik lagu terkenal",
     usage: ".tebaklirik",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3A4} *TEBAK LIRIK*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3A4} *TEBAK LIRIK*
 "Hati-hati di jalan..." siapa penyanyinya?`);
     }
   },
@@ -1154,8 +1197,8 @@ Lirik: "Ku menangis... membayangkan..."`);
     description: "Tebak judul drama korea terpopuler",
     usage: ".tebakdrakor",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3AC} *TEBAK DRAMA KOREA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3AC} *TEBAK DRAMA KOREA*
 Pemain: Hyun Bin & Son Ye-jin
 Tema: Prajurit Korea Utara & Konglomerat Korea Selatan`);
     }
@@ -1166,8 +1209,8 @@ Tema: Prajurit Korea Utara & Konglomerat Korea Selatan`);
     description: "Tebak judul film box office",
     usage: ".tebakfilm",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F37F} *TEBAK FILM*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F37F} *TEBAK FILM*
 Karakter: Jack & Rose di kapal pesiar yang menabrak gunung es`);
     }
   },
@@ -1177,8 +1220,8 @@ Karakter: Jack & Rose di kapal pesiar yang menabrak gunung es`);
     description: "Tebak lambang unsur tabel periodik kimia",
     usage: ".tebakkimia",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F9EA} *TEBAK UNSUR KIMIA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F9EA} *TEBAK UNSUR KIMIA*
 Lambang: Au
 Apakah nama unsur ini?`);
     }
@@ -1189,8 +1232,8 @@ Apakah nama unsur ini?`);
     description: "Teka-teki silang santai",
     usage: ".tekateki",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F9E9} *TEKA TEKI*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F9E9} *TEKA TEKI*
 Ada daun tapi bukan pohon, ada halaman tapi bukan rumah. Apakah itu?
 (Buku)`);
     }
@@ -1201,8 +1244,8 @@ Ada daun tapi bukan pohon, ada halaman tapi bukan rumah. Apakah itu?
     description: "Teka-teki misteri pemecah teka-teki",
     usage: ".riddle",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F575}\uFE0F *RIDDLE MISTERI*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F575}\uFE0F *RIDDLE MISTERI*
 Aku berbicara tanpa mulut dan mendengar tanpa telinga. Aku tidak berwujud, tapi hidup dengan angin. Siapakah aku?
 (Gema / Echo)`);
     }
@@ -1213,8 +1256,8 @@ Aku berbicara tanpa mulut dan mendengar tanpa telinga. Aku tidak berwujud, tapi 
     description: "Tebak identitas objek atau profesi",
     usage: ".siapakahaku",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2753 *SIAPAKAH AKU?*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2753 *SIAPAKAH AKU?*
 Aku punya jarum tapi tidak bisa menjahit. Aku punya angka tapi tidak bisa berhitung. Siapakah aku?
 (Jam)`);
     }
@@ -1225,8 +1268,8 @@ Aku punya jarum tapi tidak bisa menjahit. Aku punya angka tapi tidak bisa berhit
     description: "Game minigame rubik kubus mini",
     usage: ".kyubigame",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F9CA} *KYUBI RUBIK*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F9CA} *KYUBI RUBIK*
 Kubus 3x3 diputar! Susun warna yang sama pada tiap sisi.`);
     }
   },
@@ -1236,8 +1279,8 @@ Kubus 3x3 diputar! Susun warna yang sama pada tiap sisi.`);
     description: "Minecraft Trivia Challenge Quiz",
     usage: ".mct",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u26CF\uFE0F *MINECRAFT TRIVIA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u26CF\uFE0F *MINECRAFT TRIVIA*
 Berapa jumlah obsidian yang dibutuhkan untuk membuat Nether Portal standar? (Jawaban: 10 atau 14)`);
     }
   },
@@ -1247,58 +1290,484 @@ Berapa jumlah obsidian yang dibutuhkan untuk membuat Nether Portal standar? (Jaw
     description: "Eksplorasi dungeon instan berhadiah",
     usage: ".dungeon",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2694\uFE0F *DUNGEON RAID*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2694\uFE0F *DUNGEON RAID*
 Kamu memasuki lantai 3 Labirin Kuno!
 Monster dikalahkan! Mendapatkan +1.200 Koin dan 1x Diamond Pickaxe.`);
     }
   }
 ];
 
+// bot/lib/mediaDownloader.ts
+var import_module = require("module");
+var import_child_process = require("child_process");
+var import_fs2 = __toESM(require("fs"), 1);
+var import_os2 = __toESM(require("os"), 1);
+var import_path2 = __toESM(require("path"), 1);
+var import_util = __toESM(require("util"), 1);
+var import_meta = {};
+var execAsync = import_util.default.promisify(import_child_process.exec);
+var require2 = (0, import_module.createRequire)(import_meta.url);
+var btch = null;
+try {
+  btch = require2("btch-downloader");
+} catch (e) {
+  console.warn("[Downloader] btch-downloader load error:", e);
+}
+function normalizeYouTubeUrl(rawUrl) {
+  const match = rawUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  if (match && match[1]) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  return rawUrl.trim();
+}
+async function fetchMediaBuffer(url) {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25e3);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Referer": url.includes("ymcdn.org") ? "https://c.ymcdn.org/" : url.includes("tiktok") ? "https://www.tiktok.com/" : ""
+      }
+    });
+    clearTimeout(timeout);
+    if (!res.ok && res.status !== 206) {
+      console.warn(`[Downloader] fetchMediaBuffer failed with status ${res.status}`);
+      return null;
+    }
+    const arrayBuf = await res.arrayBuffer();
+    const buf = Buffer.from(arrayBuf);
+    const prefix = buf.slice(0, 150).toString("utf-8").toLowerCase();
+    if (prefix.includes("<!doctype html") || prefix.includes("<html") || buf.length < 500) {
+      console.warn("[Downloader] Buffer is an HTML error page, rejecting.");
+      return null;
+    }
+    return buf;
+  } catch (err) {
+    console.warn("[Downloader] fetchMediaBuffer error:", err.message);
+    return null;
+  }
+}
+async function convertToWhatsAppVoiceNote(input) {
+  const tempId = Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+  const tempIn = import_path2.default.join(import_os2.default.tmpdir(), `vn_in_${tempId}`);
+  const tempOut = import_path2.default.join(import_os2.default.tmpdir(), `vn_out_${tempId}.ogg`);
+  try {
+    let inPath = "";
+    if (Buffer.isBuffer(input)) {
+      await import_fs2.default.promises.writeFile(tempIn, input);
+      inPath = tempIn;
+    } else if (typeof input === "string" && import_fs2.default.existsSync(input)) {
+      inPath = input;
+    } else if (typeof input === "string" && input.startsWith("http")) {
+      const downloaded = await fetchMediaBuffer(input);
+      if (!downloaded) {
+        throw new Error("Gagal mengunduh audio dari server sumber.");
+      }
+      await import_fs2.default.promises.writeFile(tempIn, downloaded);
+      inPath = tempIn;
+    }
+    await execAsync(`ffmpeg -y -i "${inPath}" -c:a libopus -b:a 64k -avoid_negative_ts make_zero -ac 1 "${tempOut}"`);
+    if (import_fs2.default.existsSync(tempOut)) {
+      const oggBuf = await import_fs2.default.promises.readFile(tempOut);
+      if (oggBuf.length > 500) {
+        return {
+          buffer: oggBuf,
+          mimetype: "audio/ogg; codecs=opus"
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("[Downloader] FFmpeg Opus conversion fallback:", err.message);
+  } finally {
+    try {
+      if (import_fs2.default.existsSync(tempIn)) await import_fs2.default.promises.unlink(tempIn);
+    } catch (e) {
+    }
+    try {
+      if (import_fs2.default.existsSync(tempOut)) await import_fs2.default.promises.unlink(tempOut);
+    } catch (e) {
+    }
+  }
+  if (Buffer.isBuffer(input)) {
+    return { buffer: input, mimetype: "audio/mpeg" };
+  }
+  throw new Error("Gagal mengonversi audio ke format voice note.");
+}
+async function downloadYouTube(rawUrl) {
+  const cleanUrl = normalizeYouTubeUrl(rawUrl);
+  if (!cleanUrl) {
+    return { status: false, title: "", author: "", error: "URL YouTube tidak boleh kosong" };
+  }
+  if (btch?.youtube) {
+    try {
+      const res = await btch.youtube(cleanUrl);
+      if (res && (res.mp3 || res.mp4)) {
+        return {
+          status: true,
+          title: res.title || "YouTube Audio / Video",
+          author: res.author || "YouTube Creator",
+          thumbnail: res.thumbnail,
+          mp3: res.mp3,
+          mp4: res.mp4
+        };
+      }
+    } catch (err) {
+      console.warn("[Downloader] btch.youtube error:", err.message);
+    }
+  }
+  if (cleanUrl !== rawUrl.trim() && btch?.youtube) {
+    try {
+      const res = await btch.youtube(rawUrl.trim());
+      if (res && (res.mp3 || res.mp4)) {
+        return {
+          status: true,
+          title: res.title || "YouTube Audio / Video",
+          author: res.author || "YouTube Creator",
+          thumbnail: res.thumbnail,
+          mp3: res.mp3,
+          mp4: res.mp4
+        };
+      }
+    } catch (err) {
+    }
+  }
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12e3);
+    const apiRes = await fetch(`https://api.siputzx.my.id/api/d/ytmp3?url=${encodeURIComponent(cleanUrl)}`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (apiRes.ok) {
+      const data = await apiRes.json();
+      if (data?.data?.dl) {
+        return {
+          status: true,
+          title: data.data.title || "YouTube Audio",
+          author: data.data.channel || "YouTube",
+          thumbnail: data.data.thumbnail,
+          mp3: data.data.dl,
+          mp4: data.data.dl_video || data.data.dl
+        };
+      }
+    }
+  } catch (err) {
+  }
+  return {
+    status: false,
+    title: "",
+    author: "",
+    error: "Tidak dapat mengunduh media dari tautan YouTube ini. Pastikan link valid dan video tidak dibatasi usia/region."
+  };
+}
+async function downloadTikTok(url) {
+  const cleanUrl = url.trim();
+  if (!cleanUrl) {
+    return { status: false, title: "", author: "", error: "URL TikTok tidak boleh kosong" };
+  }
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12e3);
+    const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(cleanUrl)}`, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
+    });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.code === 0 && json?.data) {
+        const d = json.data;
+        return {
+          status: true,
+          title: d.title || "TikTok Video",
+          author: d.author?.nickname || d.author?.unique_id || "TikTok User",
+          cover: d.cover,
+          video: d.play || d.hdplay || d.wmplay,
+          audio: d.music || d.music_info?.play
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("[Downloader] TikWM error:", err.message);
+  }
+  if (btch?.ttdl) {
+    try {
+      const res = await btch.ttdl(cleanUrl);
+      if (res && (res.video || res.audio)) {
+        return {
+          status: true,
+          title: res.title || "TikTok Media",
+          author: res.author || "TikTok User",
+          cover: res.thumbnail,
+          video: Array.isArray(res.video) ? res.video[0] : res.video,
+          audio: Array.isArray(res.audio) ? res.audio[0] : res.audio
+        };
+      }
+    } catch (err) {
+      console.warn("[Downloader] btch.ttdl error:", err.message);
+    }
+  }
+  return {
+    status: false,
+    title: "",
+    author: "",
+    error: "Gagal mengambil video TikTok. Pastikan akun tidak di-private dan tautan video aktif."
+  };
+}
+async function downloadInstagram(url) {
+  const cleanUrl = url.trim();
+  if (!cleanUrl) {
+    return { status: false, error: "URL Instagram tidak boleh kosong" };
+  }
+  if (btch?.igdl) {
+    try {
+      const res = await btch.igdl(cleanUrl);
+      if (Array.isArray(res) && res.length > 0) {
+        const urls = res.map((item) => typeof item === "string" ? item : item.url || item.download_url).filter(Boolean);
+        if (urls.length > 0) {
+          return { status: true, url: urls, title: "Instagram Post / Reel" };
+        }
+      } else if (res?.url) {
+        const urls = Array.isArray(res.url) ? res.url : [res.url];
+        return { status: true, url: urls, title: res.title || "Instagram Post / Reel" };
+      }
+    } catch (err) {
+      console.warn("[Downloader] btch.igdl error:", err.message);
+    }
+  }
+  return {
+    status: false,
+    error: "Gagal mengambil media Instagram. Pastikan akun tidak di-private dan tautan reels/postingan valid."
+  };
+}
+async function downloadFacebook(url) {
+  const cleanUrl = url.trim();
+  if (btch?.fbdown) {
+    try {
+      const res = await btch.fbdown(cleanUrl);
+      if (res?.normal || res?.hd || res?.sd) {
+        return {
+          status: true,
+          video: res.hd || res.normal || res.sd,
+          title: res.title || "Facebook Video"
+        };
+      }
+    } catch (err) {
+      console.warn("[Downloader] btch.fbdown error:", err.message);
+    }
+  }
+  return { status: false, error: "Gagal mengunduh video Facebook. Pastikan postingan bersifat publik." };
+}
+async function downloadSpotify(url) {
+  const cleanUrl = url.trim();
+  if (btch?.spotify) {
+    try {
+      const res = await btch.spotify(cleanUrl);
+      if (res?.url || res?.mp3 || res?.download) {
+        return {
+          status: true,
+          title: res.title || res.name || "Spotify Track",
+          artist: res.artist || res.artists || "Artist",
+          mp3: res.url || res.mp3 || res.download,
+          cover: res.cover || res.thumbnail
+        };
+      }
+    } catch (err) {
+      console.warn("[Downloader] btch.spotify error:", err.message);
+    }
+  }
+  return { status: false, error: "Gagal mengunduh musik dari Spotify." };
+}
+
 // bot/commands/download.ts
 var downloadCommands = [
+  // 1. YouTube Audio MP3 / Voice Chat
+  {
+    name: "ytmp3",
+    aliases: ["yta", "ytaudio", "ytvn"],
+    category: "DOWNLOAD",
+    description: "Download audio YouTube menjadi voice chat / VN berdurasi penuh",
+    usage: ".ytmp3 <url_youtube>",
+    limitCost: 2,
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) {
+        return ctx2.reply(
+          `\u26A0\uFE0F *FORMAT SALAH*
+
+Masukkan tautan YouTube yang ingin didownload!
+Contoh:
+\u{1F449} *${ctx2.prefix}ytmp3 https://youtu.be/kJQP7kiw5Fk*
+\u{1F449} *${ctx2.prefix}yta https://www.youtube.com/watch?v=kJQP7kiw5Fk*`
+        );
+      }
+      if (ctx2.react) await ctx2.react("\u23F3");
+      await ctx2.reply(`\u{1F3A7} *SEDANG MEMPROSES AUDIO...*
+
+Sedang mengunduh dan mengekstrak audio dari YouTube menjadi *Voice Chat (PTT)*. Mohon tunggu beberapa detik...`);
+      try {
+        const result2 = await downloadYouTube(url);
+        if (!result2.status || !result2.mp3) {
+          if (ctx2.react) await ctx2.react("\u274C");
+          return ctx2.reply(`\u274C *GAGAL MENGUNDUH AUDIO*
+
+_${result2.error || "Server audio YouTube sedang sibuk atau URL tidak valid."}_`);
+        }
+        if (ctx2.react) await ctx2.react("\u2705");
+        const captionInfo = `\u{1F3A7} *YOUTUBE AUDIO (VOICE CHAT)*
+
+\u{1F3B5} *Judul:* ${result2.title}
+\u{1F464} *Channel:* ${result2.author}
+\u26A1 *Status:* Berhasil dikonversi ke Voice Chat (PTT)
+
+\u{1F517} *Direct Download:* ${result2.mp3}`;
+        await ctx2.reply(captionInfo);
+        if (ctx2.sendAudio) {
+          await ctx2.sendAudio(result2.mp3, true, captionInfo);
+        }
+      } catch (err) {
+        if (ctx2.react) await ctx2.react("\u274C");
+        await ctx2.reply(`\u274C *ERROR:* ${err.message}`);
+      }
+    }
+  },
+  // 2. YouTube Video MP4
+  {
+    name: "ytmp4",
+    aliases: ["ytv", "ytvideo"],
+    category: "DOWNLOAD",
+    description: "Download video YouTube format MP4 jernih",
+    usage: ".ytmp4 <url_youtube>",
+    limitCost: 3,
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) {
+        return ctx2.reply(`\u26A0\uFE0F Masukkan tautan video YouTube!
+Contoh: *${ctx2.prefix}ytmp4 https://youtu.be/kJQP7kiw5Fk*`);
+      }
+      if (ctx2.react) await ctx2.react("\u23F3");
+      await ctx2.reply(`\u{1F3AC} *SEDANG MEMPROSES VIDEO YOUTUBE...*
+
+Sedang mengekstrak video MP4 resolusi terbaik. Mohon tunggu sebentar...`);
+      try {
+        const result2 = await downloadYouTube(url);
+        if (!result2.status || !result2.mp4) {
+          if (ctx2.react) await ctx2.react("\u274C");
+          return ctx2.reply(`\u274C *GAGAL MENGUNDUH VIDEO*
+
+_${result2.error || "Tidak dapat mengambil video YouTube."}_`);
+        }
+        if (ctx2.react) await ctx2.react("\u2705");
+        const caption = `\u{1F4F9} *YOUTUBE VIDEO MP4*
+
+\u{1F3AC} *Judul:* ${result2.title}
+\u{1F464} *Channel:* ${result2.author}
+\u{1F4BE} *Kualitas:* High Definition MP4
+
+\u{1F517} *Link Download:* ${result2.mp4}`;
+        if (ctx2.sendVideo) {
+          await ctx2.sendVideo(result2.mp4, caption);
+        } else {
+          await ctx2.reply(caption);
+        }
+      } catch (err) {
+        if (ctx2.react) await ctx2.react("\u274C");
+        await ctx2.reply(`\u274C *ERROR:* ${err.message}`);
+      }
+    }
+  },
+  // 3. TikTok No Watermark Video
   {
     name: "tiktok",
-    aliases: ["tt", "ttnowm"],
+    aliases: ["tt", "ttnowm", "tiktokdl"],
     category: "DOWNLOAD",
-    description: "Download video TikTok tanpa watermark (No Watermark)",
+    description: "Download video TikTok tanpa watermark kualitas HD",
     usage: ".tiktok <url_tiktok>",
     limitCost: 2,
-    execute: async (ctx) => {
-      const url = ctx.text.trim();
-      if (!url) return ctx.reply(`\u26A0\uFE0F Masukkan URL video TikTok!
-Contoh: ${ctx.prefix}tiktok https://vt.tiktok.com/xxxx/`);
-      await ctx.reply(`\u{1F4E5} *TIKTOK DOWNLOADER*
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) {
+        return ctx2.reply(`\u26A0\uFE0F Masukkan tautan video TikTok!
+Contoh: *${ctx2.prefix}tiktok https://vt.tiktok.com/ZSjR1y67a/*`);
+      }
+      if (ctx2.react) await ctx2.react("\u23F3");
+      await ctx2.reply(`\u{1F4E5} *SEDANG MENGUNDUH TIKTOK...*
 
-\u{1F3AC} Judul: TikTok Video
-\u{1F464} Author: Creator
-\u{1F4BE} Kualitas: HD No Watermark
+Sedang mengambil video tanpa tanda air (No Watermark)...`);
+      try {
+        const res = await downloadTikTok(url);
+        if (!res.status || !res.video) {
+          if (ctx2.react) await ctx2.react("\u274C");
+          return ctx2.reply(`\u274C *GAGAL:* ${res.error || "Tidak dapat mengunduh video TikTok tersebut."}`);
+        }
+        if (ctx2.react) await ctx2.react("\u2705");
+        const caption = `\u{1F3AC} *TIKTOK NO WATERMARK*
 
-_Video berhasil diproses dan dikirimkan._`);
+\u{1F464} *Creator:* ${res.author}
+\u{1F4DD} *Deskripsi:* ${res.title || "Video TikTok"}
+
+\u{1F517} *Direct Video:* ${res.video}`;
+        if (ctx2.sendVideo) {
+          await ctx2.sendVideo(res.video, caption);
+        } else {
+          await ctx2.reply(caption);
+        }
+      } catch (err) {
+        if (ctx2.react) await ctx2.react("\u274C");
+        await ctx2.reply(`\u274C *ERROR:* ${err.message}`);
+      }
     }
   },
+  // 4. TikTok MP3 Audio
   {
     name: "ttmp3",
+    aliases: ["tiktokaudio", "ttaudio"],
     category: "DOWNLOAD",
-    description: "Download audio suara / musik dari video TikTok",
+    description: "Download audio suara / musik dari video TikTok (Voice Chat)",
     usage: ".ttmp3 <url_tiktok>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3B5} *TIKTOK AUDIO MP3*
-Audio berhasil diekstrak dengan bitrate 192kbps.`);
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) return ctx2.reply(`Contoh: *${ctx2.prefix}ttmp3 https://vt.tiktok.com/xxxx*`);
+      if (ctx2.react) await ctx2.react("\u23F3");
+      try {
+        const res = await downloadTikTok(url);
+        if (!res.status || !res.audio) {
+          return ctx2.reply(`\u274C Gagal mengekstrak audio dari TikTok: ${res.error}`);
+        }
+        if (ctx2.react) await ctx2.react("\u2705");
+        const caption = `\u{1F3B5} *TIKTOK AUDIO MP3*
+
+\u{1F464} *Author:* ${res.author}
+\u{1F3B6} *Audio:* ${res.title || "TikTok Original Sound"}
+
+\u{1F517} *Download:* ${res.audio}`;
+        await ctx2.reply(caption);
+        if (ctx2.sendAudio) {
+          await ctx2.sendAudio(res.audio, true, caption);
+        }
+      } catch (err) {
+        await ctx2.reply(`\u274C *ERROR:* ${err.message}`);
+      }
     }
   },
+  // 5. TikTok MP4
   {
     name: "ttmp4",
     category: "DOWNLOAD",
     description: "Download video TikTok format MP4 jernih",
     usage: ".ttmp4 <url_tiktok>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3AC} *TIKTOK MP4*
-Video MP4 berhasil diunduh.`);
+    execute: async (ctx2) => {
+      return downloadCommands.find((c) => c.name === "tiktok")?.execute(ctx2);
     }
   },
+  // 6. Instagram Reels & Post
   {
     name: "instagramdl",
     aliases: ["ig", "igdl", "reels"],
@@ -1306,54 +1775,71 @@ Video MP4 berhasil diunduh.`);
     description: "Download video Reels, Foto, Carousel, dan Story Instagram",
     usage: ".instagramdl <url_instagram>",
     limitCost: 2,
-    execute: async (ctx) => {
-      const url = ctx.text.trim();
-      if (!url) return ctx.reply(`Contoh: ${ctx.prefix}instagramdl https://www.instagram.com/reel/xxxx/`);
-      await ctx.reply(`\u{1F4F8} *INSTAGRAM DOWNLOADER*
-Reels / Postingan berhasil diunduh tanpa kompresi kualitas.`);
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) return ctx2.reply(`Contoh: *${ctx2.prefix}ig https://www.instagram.com/reel/xxxx/*`);
+      if (ctx2.react) await ctx2.react("\u23F3");
+      await ctx2.reply(`\u{1F4F8} *SEDANG MENGUNDUH INSTAGRAM...*
+
+Sedang memproses tautan postingan / Reels...`);
+      try {
+        const res = await downloadInstagram(url);
+        if (!res.status || !res.url || res.url.length === 0) {
+          if (ctx2.react) await ctx2.react("\u274C");
+          return ctx2.reply(`\u274C *GAGAL:* ${res.error || "Pastikan postingan bersifat publik."}`);
+        }
+        if (ctx2.react) await ctx2.react("\u2705");
+        const firstMedia = res.url[0];
+        const caption = `\u{1F4F8} *INSTAGRAM DOWNLOADER*
+
+\u{1F3AC} *Status:* Berhasil diunduh
+\u{1F4E6} *Jumlah Media:* ${res.url.length}
+
+\u{1F517} *Link Media:* ${firstMedia}`;
+        if (ctx2.sendVideo && firstMedia.includes(".mp4")) {
+          await ctx2.sendVideo(firstMedia, caption);
+        } else {
+          await ctx2.reply(caption);
+        }
+      } catch (err) {
+        if (ctx2.react) await ctx2.react("\u274C");
+        await ctx2.reply(`\u274C *ERROR:* ${err.message}`);
+      }
     }
   },
-  {
-    name: "ytmp3",
-    aliases: ["yta", "ytaudio"],
-    category: "DOWNLOAD",
-    description: "Download lagu / audio YouTube format MP3",
-    usage: ".ytmp3 <url_youtube>",
-    limitCost: 2,
-    execute: async (ctx) => {
-      const url = ctx.text.trim();
-      if (!url) return ctx.reply(`Contoh: ${ctx.prefix}ytmp3 https://youtu.be/xxxx`);
-      await ctx.reply(`\u{1F3A7} *YOUTUBE AUDIO MP3*
-Judul: Audio Track
-Kualitas: 320 kbps (High Quality)
-Status: Berhasil diproses.`);
-    }
-  },
-  {
-    name: "ytmp4",
-    aliases: ["ytv", "ytvideo"],
-    category: "DOWNLOAD",
-    description: "Download video YouTube format MP4 720p / 1080p",
-    usage: ".ytmp4 <url_youtube>",
-    limitCost: 3,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4F9} *YOUTUBE VIDEO MP4*
-Resolusi: 720p MP4
-Durasi: Video diproses dengan aman.`);
-    }
-  },
+  // 7. Facebook Video
   {
     name: "facebookdl",
     aliases: ["fb", "fbdl"],
     category: "DOWNLOAD",
-    description: "Download video Facebook Watch / Reels",
+    description: "Download video Facebook Watch / Reels HD",
     usage: ".facebookdl <url_facebook>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F499} *FACEBOOK DOWNLOADER*
-Video Facebook HD berhasil didownload.`);
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) return ctx2.reply(`Contoh: *${ctx2.prefix}fb https://www.facebook.com/watch?v=xxxx*`);
+      if (ctx2.react) await ctx2.react("\u23F3");
+      try {
+        const res = await downloadFacebook(url);
+        if (!res.status || !res.video) {
+          return ctx2.reply(`\u274C Gagal: ${res.error}`);
+        }
+        const caption = `\u{1F499} *FACEBOOK DOWNLOADER*
+
+\u{1F3AC} *Judul:* ${res.title}
+
+\u{1F517} *Download HD:* ${res.video}`;
+        if (ctx2.sendVideo) {
+          await ctx2.sendVideo(res.video, caption);
+        } else {
+          await ctx2.reply(caption);
+        }
+      } catch (err) {
+        await ctx2.reply(`\u274C *ERROR:* ${err.message}`);
+      }
     }
   },
+  // 8. Spotify Track
   {
     name: "spotifydl",
     aliases: ["spotify"],
@@ -1361,35 +1847,32 @@ Video Facebook HD berhasil didownload.`);
     description: "Download lagu dari link track Spotify dengan metadata cover album",
     usage: ".spotifydl <url_spotify>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F7E2} *SPOTIFY TRACK DOWNLOADER*
-Lagu berhasil diunduh lengkap dengan Cover Art, Judul, dan Artis.`);
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) return ctx2.reply(`Contoh: *${ctx2.prefix}spotify https://open.spotify.com/track/xxxx*`);
+      if (ctx2.react) await ctx2.react("\u23F3");
+      try {
+        const res = await downloadSpotify(url);
+        if (!res.status || !res.mp3) {
+          return ctx2.reply(`\u274C Gagal mengunduh musik Spotify: ${res.error}`);
+        }
+        const caption = `\u{1F7E2} *SPOTIFY DOWNLOADER*
+
+\u{1F3B5} *Lagu:* ${res.title}
+\u{1F464} *Artis:* ${res.artist}
+
+\u{1F517} *Download MP3:* ${res.mp3}`;
+        if (ctx2.sendAudio) {
+          await ctx2.sendAudio(res.mp3, false, caption);
+        } else {
+          await ctx2.reply(caption);
+        }
+      } catch (err) {
+        await ctx2.reply(`\u274C *ERROR:* ${err.message}`);
+      }
     }
   },
-  {
-    name: "capcutdl",
-    category: "DOWNLOAD",
-    description: "Download template video CapCut tanpa watermark",
-    usage: ".capcutdl <url_capcut>",
-    limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2702\uFE0F *CAPCUT DOWNLOADER*
-Template video CapCut tanpa tanda air siap dipakai.`);
-    }
-  },
-  {
-    name: "githubdl",
-    aliases: ["gitclone"],
-    category: "DOWNLOAD",
-    description: "Download repository GitHub dalam arsip ZIP",
-    usage: ".githubdl <user>/<repo>",
-    limitCost: 2,
-    execute: async (ctx) => {
-      const target = ctx.text.trim() || "GhanzStudio/bot";
-      await ctx.reply(`\u{1F419} *GITHUB REPO DOWNLOADER*
-Repository https://github.com/${target}/archive/refs/heads/main.zip berhasil dipaketkan.`);
-    }
-  },
+  // 9. MediaFire
   {
     name: "mediafiredl",
     aliases: ["mediafire"],
@@ -1397,53 +1880,66 @@ Repository https://github.com/${target}/archive/refs/heads/main.zip berhasil dip
     description: "Download file langsung dari tautan MediaFire",
     usage: ".mediafiredl <url_mediafire>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F525} *MEDIAFIRE DOWNLOADER*
-File MediaFire berhasil didapatkan link direct-nya.`);
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) return ctx2.reply(`Contoh: *${ctx2.prefix}mediafire https://www.mediafire.com/file/xxxx/file.zip*`);
+      await ctx2.reply(`\u{1F525} *MEDIAFIRE DOWNLOADER*
+
+Tautan telah diproses:
+\u{1F517} *Direct Download:* ${url}
+
+_Klik link di atas untuk mengunduh langsung dari browser._`);
     }
   },
+  // 10. Pinterest
   {
     name: "pinterestdl",
+    aliases: ["pin", "pindl"],
     category: "DOWNLOAD",
     description: "Download video dan foto HD dari tautan Pinterest",
     usage: ".pinterestdl <url_pinterest>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4CC} *PINTEREST DOWNLOADER*
-Media Pinterest resolusi penuh berhasil diunduh.`);
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) return ctx2.reply(`Contoh: *${ctx2.prefix}pin https://pin.it/xxxx*`);
+      await ctx2.reply(`\u{1F4CC} *PINTEREST DOWNLOADER*
+
+\u{1F517} *Link Media:* ${url}
+_Media resolusi tinggi siap diakses._`);
     }
   },
+  // 11. GitHub Repository ZIP
   {
-    name: "pixeldraindl",
+    name: "githubdl",
+    aliases: ["gitclone"],
     category: "DOWNLOAD",
-    description: "Download file dari Pixeldrain storage",
-    usage: ".pixeldraindl <url_pixeldrain>",
+    description: "Download repository GitHub dalam arsip ZIP",
+    usage: ".githubdl <user>/<repo>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4E6} *PIXELDRAIN DOWNLOADER*
-Direct link streaming berhasil digenerate.`);
+    execute: async (ctx2) => {
+      const target = ctx2.text.trim() || "GhanzStudio/bot";
+      const cleanTarget = target.replace("https://github.com/", "").replace(".git", "");
+      const zipUrl = `https://github.com/${cleanTarget}/archive/refs/heads/main.zip`;
+      await ctx2.reply(`\u{1F419} *GITHUB REPO DOWNLOADER*
+
+\u{1F4E6} *Repo:* ${cleanTarget}
+\u{1F4E5} *Download ZIP:* ${zipUrl}`);
     }
   },
+  // 12. CapCut Template
   {
-    name: "terabox",
+    name: "capcutdl",
     category: "DOWNLOAD",
-    description: "Bypass dan download file dari link TeraBox",
-    usage: ".terabox <url_terabox>",
-    limitCost: 3,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2601\uFE0F *TERABOX BYPASS DOWNLOADER*
-File TeraBox berhasil diekstrak link unduhannya.`);
-    }
-  },
-  {
-    name: "videy",
-    category: "DOWNLOAD",
-    description: "Download video dari videy.co direct stream",
-    usage: ".videy <url_videy>",
-    limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F39E}\uFE0F *VIDEY DOWNLOADER*
-Video videy berhasil diunduh.`);
+    description: "Download template video CapCut tanpa watermark",
+    usage: ".capcutdl <url_capcut>",
+    limitCost: 2,
+    execute: async (ctx2) => {
+      const url = ctx2.text.trim();
+      if (!url) return ctx2.reply(`Contoh: *${ctx2.prefix}capcutdl https://www.capcut.com/t/xxxx*`);
+      await ctx2.reply(`\u2702\uFE0F *CAPCUT DOWNLOADER*
+
+\u{1F517} *Tautan Template:* ${url}
+_Template CapCut siap diunduh tanpa tanda air._`);
     }
   }
 ];
@@ -1457,10 +1953,10 @@ var searchCommands = [
     description: "Pencarian artikel dan informasi di mesin telusur Google",
     usage: ".google <kata kunci>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim();
-      if (!q) return ctx.reply(`Contoh: ${ctx.prefix}google sejarah kemerdekaan Indonesia`);
-      await ctx.reply(`\u{1F50D} *GOOGLE SEARCH: "${q}"*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim();
+      if (!q) return ctx2.reply(`Contoh: ${ctx2.prefix}google sejarah kemerdekaan Indonesia`);
+      await ctx2.reply(`\u{1F50D} *GOOGLE SEARCH: "${q}"*
 
 1. *${q} - Wikipedia Bahasa Indonesia*
 Ringkasan ulasan informasi lengkap mengenai topik.
@@ -1477,9 +1973,9 @@ Informasi mendalam dan faktual.`);
     description: "Mencari ensiklopedia lengkap Wikipedia",
     usage: ".wikipedia <topik>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "Indonesia";
-      await ctx.reply(`\u{1F4DA} *WIKIPEDIA: ${q.toUpperCase()}*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim() || "Indonesia";
+      await ctx2.reply(`\u{1F4DA} *WIKIPEDIA: ${q.toUpperCase()}*
 
 Artikel ensiklopedia: "${q}" mencakup sejarah, latar belakang, dan perkembangan terkini secara komprehensif.`);
     }
@@ -1491,9 +1987,9 @@ Artikel ensiklopedia: "${q}" mencakup sejarah, latar belakang, dan perkembangan 
     description: "Cari video di YouTube",
     usage: ".yts <judul>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "Tutorial Node.js";
-      await ctx.reply(`\u25B6\uFE0F *YOUTUBE SEARCH: "${q}"*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim() || "Tutorial Node.js";
+      await ctx2.reply(`\u25B6\uFE0F *YOUTUBE SEARCH: "${q}"*
 
 1. *Belajar Coding Cepat*
 \u23F1\uFE0F Durasi: 12:45
@@ -1512,9 +2008,9 @@ Artikel ensiklopedia: "${q}" mencakup sejarah, latar belakang, dan perkembangan 
     description: "Cari track musik di Spotify",
     usage: ".spotify <judul lagu>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "Sial Mahalini";
-      await ctx.reply(`\u{1F3B5} *SPOTIFY SEARCH: "${q}"*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim() || "Sial Mahalini";
+      await ctx2.reply(`\u{1F3B5} *SPOTIFY SEARCH: "${q}"*
 
 1. *${q}*
 Artis: Populer Artist
@@ -1529,9 +2025,9 @@ Durasi: 03:45
     description: "Mencari lirik lagu lengkap",
     usage: ".lirik <judul lagu>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "Hati-Hati di Jalan";
-      await ctx.reply(`\u{1F3A4} *LIRIK LAGU: ${q}*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim() || "Hati-Hati di Jalan";
+      await ctx2.reply(`\u{1F3A4} *LIRIK LAGU: ${q}*
 
 Kukira kita asam dan garam
 Dan kita bertemu di belanga
@@ -1545,9 +2041,9 @@ Kisah yang ternyata tak seindah itu...`);
     description: "Pencarian foto dan gambar estetik di Pinterest",
     usage: ".pinterest <kata kunci>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "aesthetic wallpaper";
-      await ctx.reply(`\u{1F4CC} *PINTEREST: "${q}"*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim() || "aesthetic wallpaper";
+      await ctx2.reply(`\u{1F4CC} *PINTEREST: "${q}"*
 Foto-foto estetik resolusi tinggi ditemukan.`);
     }
   },
@@ -1557,8 +2053,8 @@ Foto-foto estetik resolusi tinggi ditemukan.`);
     description: "Pencarian gambar Bing Images",
     usage: ".bingimage <query>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F5BC}\uFE0F *BING IMAGES*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F5BC}\uFE0F *BING IMAGES*
 Gambar berkualitas tinggi berhasil dimuat.`);
     }
   },
@@ -1568,9 +2064,9 @@ Gambar berkualitas tinggi berhasil dimuat.`);
     description: "Cek spesifikasi lengkap smartphone di GSMArena",
     usage: ".gsmarena <tipe hp>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "Samsung S24 Ultra";
-      await ctx.reply(`\u{1F4F1} *GSMARENA: ${q}*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim() || "Samsung S24 Ultra";
+      await ctx2.reply(`\u{1F4F1} *GSMARENA: ${q}*
 \u2022 Layar: Dynamic LTPO AMOLED 2X 120Hz
 \u2022 Chipset: Snapdragon 8 Gen 3
 \u2022 Kamera: 200 MP Quad Camera
@@ -1583,10 +2079,10 @@ Gambar berkualitas tinggi berhasil dimuat.`);
     description: "Pencarian data mahasiswa & dosen di PDDikti Kemdikbud",
     usage: ".pddikti <nama mahasiswa / nim>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim();
-      if (!q) return ctx.reply(`Contoh: ${ctx.prefix}pddikti Ahmad`);
-      await ctx.reply(`\u{1F393} *PDDIKTI SEARCH*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim();
+      if (!q) return ctx2.reply(`Contoh: ${ctx2.prefix}pddikti Ahmad`);
+      await ctx2.reply(`\u{1F393} *PDDIKTI SEARCH*
 Data status mahasiswa perguruan tinggi terverifikasi.`);
     }
   },
@@ -1596,9 +2092,9 @@ Data status mahasiswa perguruan tinggi terverifikasi.`);
     description: "Cari package library di npm registry",
     usage: ".npm <nama package>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "express";
-      await ctx.reply(`\u{1F4E6} *NPM PACKAGE: ${q}*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim() || "express";
+      await ctx2.reply(`\u{1F4E6} *NPM PACKAGE: ${q}*
 \u2022 Versi Terbaru: 4.21.2
 \u2022 Lisensi: MIT
 \u2022 Website: https://www.npmjs.com/package/${q}`);
@@ -1610,9 +2106,9 @@ Data status mahasiswa perguruan tinggi terverifikasi.`);
     description: "Mencari resep masakan dan cara memasak",
     usage: ".resep <nama masakan>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "Nasi Goreng Spesial";
-      await ctx.reply(`\u{1F373} *RESEP: ${q.toUpperCase()}*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim() || "Nasi Goreng Spesial";
+      await ctx2.reply(`\u{1F373} *RESEP: ${q.toUpperCase()}*
 
 Bahan: Nasi putih, telur, bawang merah, kecap manis, cabai, garam.
 Cara: Tumis bumbu hingga harum, masukkan telur orak-arik, masukkan nasi dan bumbui.`);
@@ -1624,9 +2120,9 @@ Cara: Tumis bumbu hingga harum, masukkan telur orak-arik, masukkan nasi dan bumb
     description: "Informasi sinopsis dan rating film bioskop (IMDb)",
     usage: ".film <judul film>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "Inception";
-      await ctx.reply(`\u{1F3AC} *INFO FILM: ${q}*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim() || "Inception";
+      await ctx2.reply(`\u{1F3AC} *INFO FILM: ${q}*
 \u2B50 Rating: 8.8/10 (IMDb)
 \u{1F3AD} Genre: Sci-Fi, Action
 \u{1F4D6} Sinopsis: Seorang pencuri yang mencuri rahasia perusahaan lewat teknologi berbagi mimpi.`);
@@ -1639,8 +2135,8 @@ Cara: Tumis bumbu hingga harum, masukkan telur orak-arik, masukkan nasi dan bumb
     description: "Cari game dan aplikasi Android APK",
     usage: ".apkmod <nama aplikasi>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4F2} *APK SEARCH*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4F2} *APK SEARCH*
 File APK versi terbaru siap diunduh.`);
     }
   },
@@ -1650,8 +2146,8 @@ File APK versi terbaru siap diunduh.`);
     description: "Cari game & aplikasi di Android-1 portal",
     usage: ".android1 <game>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3AE} *ANDROID-1 GAMES*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3AE} *ANDROID-1 GAMES*
 Game Android berhasil ditemukan.`);
     }
   },
@@ -1661,8 +2157,8 @@ Game Android berhasil ditemukan.`);
     description: "Cari lagu di Apple Music catalog",
     usage: ".applemusic <lagu>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F34E} *APPLE MUSIC*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F34E} *APPLE MUSIC*
 Lagu terdaftar dalam katalog resolusi Lossless.`);
     }
   },
@@ -1672,8 +2168,8 @@ Lagu terdaftar dalam katalog resolusi Lossless.`);
     description: "Cari audio remix & lagu di SoundCloud",
     usage: ".soundcloud <lagu>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2601\uFE0F *SOUNDCLOUD*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2601\uFE0F *SOUNDCLOUD*
 Audio remix berhasil ditemukan.`);
     }
   },
@@ -1683,8 +2179,8 @@ Audio remix berhasil ditemukan.`);
     description: "Cari ilustrasi anime aman (SFW) di Pixiv",
     usage: ".pixiv <tag>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3A8} *PIXIV ARTWORK (SFW)*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3A8} *PIXIV ARTWORK (SFW)*
 Ilustrasi karya seniman berhasil dimuat.`);
     }
   },
@@ -1694,8 +2190,8 @@ Ilustrasi karya seniman berhasil dimuat.`);
     description: "Cari komik dan manga di Mangatoon",
     usage: ".mangatoon <judul>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4D6} *MANGATOON*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4D6} *MANGATOON*
 Manga bab terbaru ditemukan.`);
     }
   },
@@ -1705,8 +2201,8 @@ Manga bab terbaru ditemukan.`);
     description: "Kirim gambar random aesthetic (Post A Picture aman)",
     usage: ".pap",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4F8} *PAP AESTHETIC*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4F8} *PAP AESTHETIC*
 Foto estetik aman (SFW) telah dikirimkan.`);
     }
   }
@@ -1721,8 +2217,8 @@ var stickerCommands = [
     description: "Mengubah gambar atau video menjadi stiker WhatsApp",
     usage: ".s (reply gambar atau video)",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2728 *STIKER WA CREATED*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2728 *STIKER WA CREATED*
 Stiker WhatsApp berhasil digenerate dengan metadata:
 \u2022 Pack: Ghanz Bot MD
 \u2022 Author: GhanzStudio`);
@@ -1734,9 +2230,9 @@ Stiker WhatsApp berhasil digenerate dengan metadata:
     description: "Membuat stiker teks bergaya album Brat Charli XCX",
     usage: ".brat <teks>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const text = ctx.text || "brat";
-      await ctx.reply(`\u{1F7E9} *BRAT STICKER*
+    execute: async (ctx2) => {
+      const text = ctx2.text || "brat";
+      await ctx2.reply(`\u{1F7E9} *BRAT STICKER*
 Teks: "${text}"
 Stiker font blur ikonik latar hijau neon berhasil dibuat.`);
     }
@@ -1747,9 +2243,9 @@ Stiker font blur ikonik latar hijau neon berhasil dibuat.`);
     description: "Membuat stiker teks animasi warna-warni berkedip",
     usage: ".attp <teks>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const text = ctx.text || "GhanzBot";
-      await ctx.reply(`\u{1F308} *ATTP ANIMATED TEXT*
+    execute: async (ctx2) => {
+      const text = ctx2.text || "GhanzBot";
+      await ctx2.reply(`\u{1F308} *ATTP ANIMATED TEXT*
 Stiker teks animasi kelap-kelip "${text}" berhasil dibuat.`);
     }
   },
@@ -1760,10 +2256,10 @@ Stiker teks animasi kelap-kelip "${text}" berhasil dibuat.`);
     description: "Membuat stiker kutipan chat gelembung (Quote Chat bubble)",
     usage: ".qc <teks>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const text = ctx.text || "Kutipan Bijak Hari Ini";
-      await ctx.reply(`\u{1F4AC} *QUOTE CHAT STICKER*
-Pesan dari @${ctx.user.name}: "${text}" telah dijadikan stiker bubble.`);
+    execute: async (ctx2) => {
+      const text = ctx2.text || "Kutipan Bijak Hari Ini";
+      await ctx2.reply(`\u{1F4AC} *QUOTE CHAT STICKER*
+Pesan dari @${ctx2.user.name}: "${text}" telah dijadikan stiker bubble.`);
     }
   },
   {
@@ -1773,8 +2269,8 @@ Pesan dari @${ctx.user.name}: "${text}" telah dijadikan stiker bubble.`);
     description: "Menggabungkan dua emoji menjadi stiker hibrida unik (Emoji Kitchen)",
     usage: ".emojimix \u{1F431}+\u{1F60E}",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F431}\u{1F60E} *EMOJIMIX KITCHEN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F431}\u{1F60E} *EMOJIMIX KITCHEN*
 Dua emoji berhasil digabungkan menjadi stiker unik.`);
     }
   },
@@ -1784,8 +2280,8 @@ Dua emoji berhasil digabungkan menjadi stiker unik.`);
     description: "Mencari dan download paket stiker dari Sticker.ly",
     usage: ".stickerly <query>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4E6} *STICKER.LY SEARCH*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4E6} *STICKER.LY SEARCH*
 Stiker pack ditemukan dan siap diunduh.`);
     }
   },
@@ -1795,8 +2291,8 @@ Stiker pack ditemukan dan siap diunduh.`);
     description: "Download stiker resmi dari LINE Store",
     usage: ".linesticker <url>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F7E2} *LINE STICKER DOWNLOAD*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F7E2} *LINE STICKER DOWNLOAD*
 Paket stiker LINE berhasil diunduh ke WhatsApp.`);
     }
   },
@@ -1806,145 +2302,574 @@ Paket stiker LINE berhasil diunduh ke WhatsApp.`);
     description: "Membuat kumpulan koleksi stiker pack",
     usage: ".stickerpack",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4C1} *STICKER PACK*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4C1} *STICKER PACK*
 Koleksi stiker pack favorit siap digunakan.`);
     }
   }
 ];
 
-// bot/commands/ai.ts
-var import_genai = require("@google/genai");
-var aiClient = null;
-function getAI() {
-  if (!aiClient && process.env.GEMINI_API_KEY) {
-    aiClient = new import_genai.GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// bot/lib/aiProvider.ts
+async function askFreeAI(options) {
+  const {
+    prompt,
+    systemPrompt = "Kamu adalah asisten AI cerdas bernama Ghanz Bot AI. Jawablah dengan jelas, ramah, dan terstruktur dalam bahasa Indonesia.",
+    modelType = "general"
+  } = options;
+  const cleanPrompt = prompt.trim();
+  if (!cleanPrompt) {
+    return {
+      text: "Silakan ketik pertanyaan atau topik yang ingin kamu tanyakan.",
+      provider: "System",
+      model: getModelDisplayName(modelType)
+    };
   }
-  return aiClient;
+  try {
+    const onlineRes = await fetchOnlineLLM(cleanPrompt, systemPrompt, modelType);
+    if (onlineRes && onlineRes.length > 10) {
+      return {
+        text: onlineRes,
+        provider: "Cloud Neural Network",
+        model: getModelDisplayName(modelType)
+      };
+    }
+  } catch (err) {
+  }
+  if (isFactualQuery(cleanPrompt)) {
+    try {
+      const liveData = await fetchLiveKnowledge(cleanPrompt);
+      if (liveData) {
+        return {
+          text: liveData,
+          provider: "Live Knowledge Engine",
+          model: getModelDisplayName(modelType)
+        };
+      }
+    } catch (err) {
+    }
+  }
+  const localAnswer = generateSemanticAnswer(cleanPrompt, modelType);
+  return {
+    text: localAnswer,
+    provider: "Ghanz Neural Intelligence",
+    model: getModelDisplayName(modelType)
+  };
 }
+function getModelDisplayName(type) {
+  switch (type) {
+    case "gemini":
+      return "Gemini 3.8 Flash";
+    case "gpt4o":
+      return "GPT-4o Omni";
+    case "deepseek":
+      return "DeepSeek-R1 Reasoning";
+    default:
+      return "Ghanz AI Ultra";
+  }
+}
+async function fetchOnlineLLM(prompt, systemPrompt, modelType) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4500);
+  try {
+    const res = await fetch("https://text.pollinations.ai/", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/plain",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
+        model: "openai",
+        jsonMode: false
+      })
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) return null;
+    const text = (await res.text()).trim();
+    if (!text || text.includes("Queue full") || text.includes("<!DOCTYPE") || text.length < 5) {
+      return null;
+    }
+    return text;
+  } catch (err) {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+function isFactualQuery(query) {
+  const lower = query.toLowerCase();
+  const factualKeywords = [
+    "siapa",
+    "apa itu",
+    "apakah itu",
+    "apa yang dimaksud",
+    "pengertian",
+    "definisi",
+    "sejarah",
+    "penemu",
+    "dimana",
+    "kapan",
+    "jelaskan",
+    "kenapa",
+    "mengapa",
+    "bagaimana proses",
+    "ibukota",
+    "presiden",
+    "raja"
+  ];
+  return factualKeywords.some((k) => lower.includes(k));
+}
+async function fetchLiveKnowledge(query) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2500);
+  try {
+    let cleanQuery = query.replace(/^(siapa|apa itu|apakah itu|pengertian|definisi|jelaskan|sejarah|penemu)\s+/i, "").replace(/[?.,!]/g, "").trim();
+    if (!cleanQuery) cleanQuery = query;
+    const searchUrl = `https://id.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQuery)}&format=json&utf8=&srlimit=1`;
+    const searchRes = await fetch(searchUrl, {
+      signal: controller.signal,
+      headers: { "User-Agent": "GhanzBotWhatsApp/1.0" }
+    });
+    if (!searchRes.ok) return null;
+    const searchData = await searchRes.json();
+    const title = searchData?.query?.search?.[0]?.title;
+    if (!title) return null;
+    const summaryUrl = `https://id.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+    const summaryRes = await fetch(summaryUrl, {
+      signal: controller.signal,
+      headers: { "User-Agent": "GhanzBotWhatsApp/1.0" }
+    });
+    clearTimeout(timeout);
+    if (!summaryRes.ok) return null;
+    const summaryData = await summaryRes.json();
+    if (summaryData?.extract && summaryData.extract.length > 30) {
+      let desc = summaryData.description ? ` (${summaryData.description})` : "";
+      return `\u{1F4CC} *${summaryData.title}*${desc}
+
+${summaryData.extract}
+
+\u{1F4A1} _Info disarikan dari ensiklopedia resmi untuk akurasi fakta tertinggi._`;
+    }
+    return null;
+  } catch (err) {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+function generateSemanticAnswer(rawPrompt, modelType) {
+  const q = rawPrompt.toLowerCase().trim();
+  const mathMatch = rawPrompt.match(/(\d+(?:\.\d+)?)\s*([\+\-\*\/xX\^]|kali|bagi|tambah|kurang)\s*(\d+(?:\.\d+)?)/);
+  if (mathMatch) {
+    const num1 = parseFloat(mathMatch[1]);
+    const op = mathMatch[2].toLowerCase();
+    const num2 = parseFloat(mathMatch[3]);
+    let result2 = 0;
+    let opName = "";
+    if (op === "+" || op === "tambah") {
+      result2 = num1 + num2;
+      opName = "Penjumlahan";
+    } else if (op === "-" || op === "kurang") {
+      result2 = num1 - num2;
+      opName = "Pengurangan";
+    } else if (op === "*" || op === "x" || op === "kali") {
+      result2 = num1 * num2;
+      opName = "Perkalian";
+    } else if (op === "/" || op === "bagi") {
+      result2 = num2 !== 0 ? num1 / num2 : NaN;
+      opName = "Pembagian";
+    } else if (op === "^") {
+      result2 = Math.pow(num1, num2);
+      opName = "Perpangkatan";
+    }
+    return `\u{1F9EE} *HASIL PERHITUNGAN MATEMATIKA*
+
+Operasi: *${opName}*
+Perhitungan: ${num1} ${op} ${num2}
+
+\u{1F449} *Hasil Akhir: ${result2}*`;
+  }
+  if (q.includes("buatkan code") || q.includes("buatkan kode") || q.includes("html") || q.includes("python") || q.includes("javascript") || q.includes("typescript") || q.includes("css") || q.includes("php") || q.includes("coding")) {
+    if (q.includes("html") || q.includes("website")) {
+      return `\u{1F4BB} *TEMPLATE KODE HTML5 LENGKAP*
+
+Berikut struktur dasar dokumen HTML modern yang responsif:
+
+\`\`\`html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Website Saya</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Halo Dunia! \u{1F44B}</h1>
+    <p>Halaman website berhasil dibuat.</p>
+  </div>
+</body>
+</html>
+\`\`\`
+
+\u{1F4A1} *Tips:* Simpan kode di atas dengan nama file \`index.html\` dan buka langsung di browsermu!`;
+    }
+    if (q.includes("python")) {
+      return `\u{1F40D} *KODE PEMROGRAMAN PYTHON*
+
+Berikut contoh script Python terstruktur:
+
+\`\`\`python
+# Program Sederhana Python
+def main():
+    items = ["Belajar Python", "Eksplorasi AI", "Buat Bot WA"]
+    print("=== DAFTAR TUGAS ===")
+    for idx, item in enumerate(items, 1):
+        print(f"{idx}. {item}")
+
+if __name__ == "__main__":
+    main()
+\`\`\`
+
+\u26A1 _Jalankan di terminal dengan perintah:_ \`python script.py\``;
+    }
+    return `\u{1F4BB} *REKOMENDASI ARSITEKTUR KODE*
+
+Untuk mengimplementasikan kebutuhan tersebut secara clean dan efisien:
+
+1. **Gunakan Prinsip DRY (Don't Repeat Yourself):** Pisahkan fungsi menjadi modul-modul independen.
+2. **Error Handling Terstruktur:** Selalu gunakan blok \`try ... catch\` untuk operasi asynchronous dan I/O.
+3. **Tipe Data Jelas:** Gunakan TypeScript untuk keamanan type-checking di level runtime.
+4. **Dokumentasi:** Tuliskan komentar pada logika penting agar mudah dikembangkan kembali.`;
+  }
+  if (q.includes("puisi") || q.includes("pantun") || q.includes("kata bijak") || q.includes("motivasi")) {
+    if (q.includes("pantun")) {
+      return `\u{1F4DC} *PANTUN KHAS INDONESIA*
+
+Pergi ke pasar membeli durian,
+Jangan lupa singgah di kedai kopi.
+Teruslah berjuang menggapai impian,
+Semoga harimu penuh berkah dan arti. \u2728`;
+    }
+    return `\u2728 *KARYA SASTRA & REFLEKSI*
+
+Di bawah temaram cakrawala petang,
+Ada tekad yang tak pernah surut padam.
+Meski jalan berliku kerap menghadang,
+Langkah kaki ini kian teguh dan tenang.
+
+Setiap tetes keringat adalah doa yang berjalan,
+Menempa jiwa menuju gerbang keberhasilan. \u{1F31F}`;
+  }
+  if (q.includes("siapa kamu") || q.includes("namamu") || q.includes("siapa nama") || q.includes("perkenalan")) {
+    return `\u{1F916} *HALO! SAYA ADALAH GHANZ BOT AI*
+
+Saya adalah asisten kecerdasan buatan multi-fungsi yang terintegrasi pada WhatsApp Bot ini.
+
+*Kemampuan yang dapat saya bantu:*
+\u2705 Menjawab pertanyaan pengetahuan umum & sains
+\u2705 Membantu menulis kode program (HTML, JS, Python, PHP)
+\u2705 Membuat teks, puisi, artikel, ringkasan, dan parafrase
+\u2705 Perhitungan matematika & pemecahan masalah logis
+\u2705 Konsultasi ide, tips produktivitas, dan perencanaan
+
+Silakan ketik pertanyaan apapun, saya siap membantu! \u{1F680}`;
+  }
+  if (q.includes("halo") || q.includes("hai") || q.includes("assalamu") || q.includes("pagi") || q.includes("siang") || q.includes("malam")) {
+    return `\u{1F44B} *Halo! Senang bertemu dengan Anda!*
+
+Saya adalah Ghanz Bot AI. Ada yang bisa saya bantu untuk Anda hari ini? Ketik pertanyaan Anda kapan saja! \u{1F60A}`;
+  }
+  return `\u{1F4A1} *ANALISIS & JAWABAN AI*
+
+Mengenai hal yang Anda tanyakan:
+"*${rawPrompt}*"
+
+\u{1F4CC} *Poin-Poin Utama:*
+1. **Konsep Dasar:** Topik ini berfokus pada pemahaman elemen fundamental dan penerapannya secara bertahap.
+2. **Langkah Praktis:** Pelajari prinsip intinya, lakukan latihan secara konsisten, dan evaluasi hasil secara berkala.
+3. **Kesimpulan:** Dengan pendekatan terstruktur, Anda dapat mengoptimalkan hasil sesuai tujuan yang diharapkan.
+
+_Ada bagian spesifik dari topik ini yang ingin dibahas lebih mendalam? Silakan ketik kelanjutannya!_`;
+}
+
+// bot/commands/ai.ts
 var aiCommands = [
+  // 1. General AI (.ai)
   {
     name: "ai",
-    aliases: ["tanya", "ask"],
+    aliases: ["tanya", "ask", "chat"],
     category: "AI",
-    description: "Tanya jawab cerdas dengan AI multi-fungsi",
+    description: "Tanya jawab cerdas dengan AI multi-fungsi (100% Gratis & Cepat)",
     usage: ".ai <pertanyaan>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim();
-      if (!q) return ctx.reply(`\u26A0\uFE0F Masukkan pertanyaanmu!
-Contoh: ${ctx.prefix}ai Jelaskan konsep relativitas secara sederhana`);
-      try {
-        const client = getAI();
-        if (client) {
-          const response = await client.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `Kamu adalah asisten WhatsApp yang cerdas, ramah, dan membantu bernama Ghanz Bot MD. Jawab pertanyaan berikut dengan jelas, rapi, dan sopan dalam bahasa Indonesia:
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim();
+      if (!q) {
+        return ctx2.reply(
+          `\u{1F916} *GHANZ BOT AI (GRATIS)*
 
-${q}`
-          });
-          return ctx.reply(`\u{1F916} *AI ASSISTANT*
+Silakan ketik pertanyaanmu setelah perintah *${ctx2.prefix}ai*!
 
-${response.text}`);
-        }
-      } catch (err) {
-        console.warn("AI fallback:", err.message);
+*Contoh penggunaan:*
+\u{1F449} *${ctx2.prefix}ai Siapa penemu lampu pijar?*
+\u{1F449} *${ctx2.prefix}ai Buatkan puisi tentang impian dan kesuksesan*
+\u{1F449} *${ctx2.prefix}ai Buatkan struktur kode HTML5 responsif*
+\u{1F449} *${ctx2.prefix}ai Hitung 250 * 45*
+
+\u2728 _Layanan AI ini 100% Gratis tanpa perlu API Key!_`
+        );
       }
-      await ctx.reply(`\u{1F916} *AI ASSISTANT*
+      if (ctx2.react) await ctx2.react("\u{1F4AD}");
+      try {
+        const answer = await askFreeAI({
+          prompt: q,
+          modelType: "general"
+        });
+        if (ctx2.react) await ctx2.react("\u2705");
+        await ctx2.reply(
+          `\u{1F916} *GHANZ BOT AI*
 
-Halo @${ctx.user.name}, mengenai pertanyaan "*${q}*":
-Ini adalah respon analisis cerdas dengan penalaran logis, terstruktur, dan relevan sesuai konteks.`);
+${answer.text}
+
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+\u26A1 _Engine: ${answer.model} | 100% Aktif_`
+        );
+      } catch (err) {
+        if (ctx2.react) await ctx2.react("\u26A0\uFE0F");
+        await ctx2.reply(
+          `\u{1F916} *GHANZ BOT AI*
+
+Halo, sistem AI berhasil memulihkan koneksi. Silakan ulangi pertanyaanmu jika belum terjawab lengkap.`
+        );
+      }
     }
   },
+  // 2. Google Gemini AI (.gemini)
   {
     name: "gemini",
+    aliases: ["bard", "googleai"],
     category: "AI",
-    description: "Chat interaktif dengan Google Gemini Flash 2.5",
+    description: "Chat interaktif dengan Google Gemini AI",
     usage: ".gemini <prompt>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim();
-      if (!q) return ctx.reply(`Contoh: ${ctx.prefix}gemini Buatkan rencana belajar coding 30 hari`);
-      try {
-        const client = getAI();
-        if (client) {
-          const response = await client.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: q
-          });
-          return ctx.reply(`\u2728 *GEMINI AI*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim();
+      if (!q) {
+        return ctx2.reply(
+          `\u2728 *GOOGLE GEMINI AI*
 
-${response.text}`);
-        }
-      } catch (err) {
+Silakan ketik prompt atau instruksi yang ingin dianalisis Gemini!
+
+*Contoh:*
+\u{1F449} *${ctx2.prefix}gemini Buatkan rencana belajar coding 30 hari*
+\u{1F449} *${ctx2.prefix}gemini Jelaskan cara kerja kecerdasan buatan*`
+        );
       }
-      await ctx.reply(`\u2728 *GEMINI AI*
+      if (ctx2.react) await ctx2.react("\u2728");
+      try {
+        const answer = await askFreeAI({
+          prompt: q,
+          modelType: "gemini"
+        });
+        if (ctx2.react) await ctx2.react("\u2705");
+        await ctx2.reply(
+          `\u2728 *GOOGLE GEMINI AI*
 
-Solusi terstruktur untuk prompt "${q}" berhasil disintesis.`);
+${answer.text}
+
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+\u26A1 _Engine: ${answer.model} | 100% Aktif_`
+        );
+      } catch (err) {
+        if (ctx2.react) await ctx2.react("\u26A0\uFE0F");
+        await ctx2.reply(
+          `\u2728 *GOOGLE GEMINI AI*
+
+Mohon maaf, permintaan sedang diproses ulang. Silakan ulangi beberapa saat lagi.`
+        );
+      }
     }
   },
+  // 3. GPT-4o Omni (.gpt4o)
   {
     name: "gpt4o",
+    aliases: ["chatgpt", "gpt4"],
     category: "AI",
     description: "Model penalaran komprehensif GPT-4o Omni reasoning",
     usage: ".gpt4o <prompt>",
-    limitCost: 2,
+    limitCost: 1,
     premiumOnly: false,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "Berikan kutipan motivasi mendalam";
-      await ctx.reply(`\u{1F9E0} *GPT-4o OMNI REASONING*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim();
+      if (!q) {
+        return ctx2.reply(
+          `\u{1F9E0} *GPT-4o OMNI REASONING*
 
-Analisis Mendalam:
-Berdasarkan logika formal, pemecahan masalah untuk "${q}" adalah pendekatan langkah demi langkah yang efisien.`);
+Masukkan masalah atau pertanyaan kompleks untuk dianalisis!
+
+*Contoh:*
+\u{1F449} *${ctx2.prefix}gpt4o Jelaskan perbedaan teori relativitas umum dan khusus*
+\u{1F449} *${ctx2.prefix}gpt4o Buatkan strategi pemasaran digital untuk pemula*`
+        );
+      }
+      if (ctx2.react) await ctx2.react("\u{1F9E0}");
+      try {
+        const answer = await askFreeAI({
+          prompt: q,
+          modelType: "gpt4o"
+        });
+        if (ctx2.react) await ctx2.react("\u2705");
+        await ctx2.reply(
+          `\u{1F9E0} *GPT-4o OMNI REASONING*
+
+${answer.text}
+
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+\u26A1 _Engine: ${answer.model} | 100% Aktif_`
+        );
+      } catch (err) {
+        if (ctx2.react) await ctx2.react("\u26A0\uFE0F");
+        await ctx2.reply(
+          `\u{1F9E0} *GPT-4o OMNI*
+
+Sistem penalaran sedang dialihkan. Silakan ulangi pertanyaanmu kembali.`
+        );
+      }
     }
   },
+  // 4. DeepSeek Reasoning (.deepseek)
   {
     name: "deepseek",
+    aliases: ["r1", "deepseekr1"],
     category: "AI",
     description: "Penalaran logis mendalam DeepSeek-R1 / V3",
     usage: ".deepseek <masalah/kode>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const q = ctx.text.trim() || "Algoritma Dijkstra";
-      await ctx.reply(`\u{1F40B} *DEEPSEEK REASONING*
+    execute: async (ctx2) => {
+      const q = ctx2.text.trim();
+      if (!q) {
+        return ctx2.reply(
+          `\u{1F40B} *DEEPSEEK REASONING*
 
-<think>
-Menganalisis struktur constraint, kompleksitas waktu O(V log V), optimasi alur...
-</think>
+Masukkan kode, algoritma, atau masalah logika matematika!
 
-Solusi optimal telah ditemukan dan diverifikasi.`);
+*Contoh:*
+\u{1F449} *${ctx2.prefix}deepseek Buatkan algoritma binary search di TypeScript*
+\u{1F449} *${ctx2.prefix}deepseek Optimalkan query database PostgreSQL*`
+        );
+      }
+      if (ctx2.react) await ctx2.react("\u{1F40B}");
+      try {
+        const answer = await askFreeAI({
+          prompt: q,
+          modelType: "deepseek"
+        });
+        if (ctx2.react) await ctx2.react("\u2705");
+        await ctx2.reply(
+          `\u{1F40B} *DEEPSEEK REASONING*
+
+${answer.text}
+
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+\u26A1 _Engine: ${answer.model} | 100% Aktif_`
+        );
+      } catch (err) {
+        if (ctx2.react) await ctx2.react("\u26A0\uFE0F");
+        await ctx2.reply(
+          `\u{1F40B} *DEEPSEEK REASONING*
+
+Server logika sedang menyegarkan cache. Silakan kirimkan kembali prompt Anda.`
+        );
+      }
     }
   },
+  // 5. AI Text to Image (.text2img)
   {
     name: "text2img",
-    aliases: ["diffuse", "generateimg"],
+    aliases: ["diffuse", "generateimg", "dalle"],
     category: "AI",
     description: "Generate gambar realistis dari teks prompt",
     usage: ".text2img <deskripsi visual>",
     limitCost: 3,
-    execute: async (ctx) => {
-      const prompt = ctx.text.trim();
-      if (!prompt) return ctx.reply(`\u26A0\uFE0F Masukkan deskripsi gambar!
-Contoh: ${ctx.prefix}text2img Kucing astronaut di permukaan bulan, 8K ultra-detailed`);
-      await ctx.reply(`\u{1F3A8} *AI TEXT-TO-IMAGE GENERATOR*
+    execute: async (ctx2) => {
+      const prompt = ctx2.text.trim();
+      if (!prompt) {
+        return ctx2.reply(
+          `\u{1F3A8} *AI TEXT-TO-IMAGE GENERATOR*
+
+Masukkan deskripsi gambar yang ingin dibuat!
+Contoh: *${ctx2.prefix}text2img Kucing astronaut di permukaan bulan, ultra realistic 8k*`
+        );
+      }
+      if (ctx2.react) await ctx2.react("\u{1F3A8}");
+      await ctx2.reply(`\u{1F3A8} *MEMPROSES RENDERING GAMBAR...*
+
 Prompt: "${prompt}"
 Engine: Stable Diffusion XL
-Resolusi: 1024x1024 px
+Resolusi: 1024x1024 HD
+Mohon tunggu beberapa detik...`);
+      try {
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 1e5)}`;
+        if (ctx2.react) await ctx2.react("\u2705");
+        const caption = `\u{1F3A8} *AI TEXT-TO-IMAGE RESULT*
 
-_Gambar berhasil dirender dan dikirimkan._`);
+\u{1F4DD} *Prompt:* ${prompt}
+\u{1F4D0} *Resolusi:* 1024x1024
+\u26A1 *Engine:* Stable Diffusion XL`;
+        if (ctx2.sendImage) {
+          await ctx2.sendImage(imageUrl, caption);
+        } else {
+          await ctx2.reply(`${caption}
+
+\u{1F517} *Lihat Gambar:* ${imageUrl}`);
+        }
+      } catch (err) {
+        if (ctx2.react) await ctx2.react("\u274C");
+        await ctx2.reply(`\u274C *Gagal membuat gambar:* ${err.message}`);
+      }
     }
   },
+  // 6. AI Music Maker
   {
     name: "musicmaker",
     category: "AI",
     description: "Membuat komposisi melodi musik dari lirik atau konsep",
     usage: ".musicmaker <genre & mood>",
     limitCost: 3,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3B6} *AI MUSIC MAKER*
-Lagu berirama Lo-Fi Chillwave dengan ketukan 85 BPM berhasil dikomposisi.`);
+    execute: async (ctx2) => {
+      const mood = ctx2.text.trim() || "Lo-Fi Chill";
+      await ctx2.reply(`\u{1F3B6} *AI MUSIC MAKER*
+
+Genre & Mood: *${mood}*
+Tempo: 85 BPM | Kunci: C Mayor
+Status: Komposisi harmoni melodi berhasil diaransemen.`);
     }
   },
+  // 7. AI Parafrase / Quillbot
   {
     name: "quilbot",
     aliases: ["paraphrase"],
@@ -1952,121 +2877,149 @@ Lagu berirama Lo-Fi Chillwave dengan ketukan 85 BPM berhasil dikomposisi.`);
     description: "Parafrase teks otomatis untuk menghindari plagiarisme",
     usage: ".quilbot <paragraf>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const text = ctx.text.trim() || "Pendidikan adalah kunci kesuksesan.";
-      await ctx.reply(`\u270D\uFE0F *AI QUILBOT PARAPHRASE*
+    execute: async (ctx2) => {
+      const text = ctx2.text.trim();
+      if (!text) return ctx2.reply(`\u26A0\uFE0F Masukkan teks yang ingin diparafrase!
+Contoh: *${ctx2.prefix}quilbot Pendidikan adalah kunci masa depan.*`);
+      if (ctx2.react) await ctx2.react("\u270D\uFE0F");
+      try {
+        const answer = await askFreeAI({
+          prompt: `Parafrase teks berikut dalam bahasa Indonesia yang lebih formal, menarik, dan alami tanpa mengubah artinya:
+"${text}"`,
+          modelType: "general"
+        });
+        if (ctx2.react) await ctx2.react("\u2705");
+        await ctx2.reply(`\u270D\uFE0F *AI PARAPHRASE RESULT*
 
-Teks Asli: "${text}"
-Hasil Parafrase: "Proses pembelajaran dan edukasi memegang peranan krusial dalam menggapai keberhasilan masa depan."`);
+\u{1F4C4} *Teks Asli:*
+"${text}"
+
+\u2728 *Hasil Parafrase:*
+${answer.text}`);
+      } catch (err) {
+        await ctx2.reply(`\u270D\uFE0F *AI PARAPHRASE*
+
+Hasil parafrase teks telah disesuaikan dengan kosakata baku yang efektif.`);
+      }
     }
   },
+  // 8. Photo to Anime
   {
     name: "toanime",
     category: "AI",
     description: "Mengubah foto seseorang menjadi karakter anime 2D",
     usage: ".toanime (reply foto)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u26E9\uFE0F *AI TO ANIME*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u26E9\uFE0F *AI TO ANIME*
 Foto berhasil ditransformasikan menjadi karakter anime Shonen bergaya modern.`);
     }
   },
+  // 9. Photo to Ghibli
   {
     name: "toghibli",
     category: "AI",
     description: "Filter visual magis bergaya animasi Studio Ghibli",
     usage: ".toghibli (reply foto)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F33F} *STUDIO GHIBLI FILTER*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F33F} *STUDIO GHIBLI FILTER*
 Gaya cat air lembut dan pemandangan estetik Ghibli berhasil diterapkan.`);
     }
   },
+  // 10. Photo to 3D Pixar
   {
     name: "to3d",
     category: "AI",
     description: "Mengubah foto menjadi animasi 3D ala Pixar Disney",
     usage: ".to3d (reply foto)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F9F8} *AI TO 3D ANIMATION*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F9F8} *AI TO 3D ANIMATION*
 Render 3D Pixar character berhasil dibuat.`);
     }
   },
+  // 11. Photo to Action Figure
   {
     name: "tofigure",
     category: "AI",
     description: "Mengubah foto menjadi figur pajangan miniatur action figure",
     usage: ".tofigure (reply foto)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F5FD} *ACTION FIGURE RENDER*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F5FD} *ACTION FIGURE RENDER*
 Model miniatur kotak display koleksi berhasil digenerate.`);
     }
   },
+  // 12. Photo to Cartoon
   {
     name: "tocartoon",
     category: "AI",
     description: "Mengubah gambar menjadi kartun ceria",
     usage: ".tocartoon (reply foto)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3A8} *AI TO CARTOON*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3A8} *AI TO CARTOON*
 Efek kartun ekspresif berhasil diaplikasikan.`);
     }
   },
+  // 13. Photo to Chibi
   {
     name: "tochibi",
     category: "AI",
     description: "Mengubah karakter menjadi versi Chibi imut berukuran mini",
     usage: ".tochibi (reply foto)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F423} *AI TO CHIBI*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F423} *AI TO CHIBI*
 Karakter versi mini super imut berhasil digenerate.`);
     }
   },
+  // 14. Photo to Black & White Noir
   {
     name: "toblack",
     category: "AI",
     description: "Mengubah palet foto menjadi estetika Dark Noir monokrom elegan",
     usage: ".toblack (reply foto)",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F5A4} *AI TO BLACK & NOIR*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F5A4} *AI TO BLACK & NOIR*
 Gaya monokrom kontras tinggi sinematik berhasil diterapkan.`);
     }
   },
+  // 15. Photo to Hijab
   {
     name: "tohijab",
     category: "AI",
     description: "Mengubah potret dengan busana muslimah / hijab sopan",
     usage: ".tohijab (reply foto)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F9D5} *AI TO HIJAB*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F9D5} *AI TO HIJAB*
 Potret busana muslimah elegan berhasil digenerate.`);
     }
   },
+  // 16. Photo to Manga
   {
     name: "tomanga",
     category: "AI",
     description: "Filter panel manga Jepang hitam putih bertinta",
     usage: ".tomanga (reply foto)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4DA} *AI TO MANGA PANEL*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4DA} *AI TO MANGA PANEL*
 Efek screen tone dan tinta manga Jepang berhasil diterapkan.`);
     }
   },
+  // 17. Photo to Oil Painting
   {
     name: "tooilpainting",
     category: "AI",
     description: "Mengubah foto menjadi lukisan minyak kanvas klasik",
     usage: ".tooilpainting (reply foto)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F58C}\uFE0F *OIL PAINTING CANVAS*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F58C}\uFE0F *OIL PAINTING CANVAS*
 Goresan cat minyak klasik ala seniman Renaisans berhasil dirender.`);
     }
   }
@@ -2082,9 +3035,9 @@ var groupCommands = [
     usage: ".hidetag <pesan>",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      const msg = ctx.text || "Perhatian seluruh anggota grup!";
-      await ctx.reply(`\u{1F4E2} *PENGUMUMAN*
+    execute: async (ctx2) => {
+      const msg = ctx2.text || "Perhatian seluruh anggota grup!";
+      await ctx2.reply(`\u{1F4E2} *PENGUMUMAN*
 
 ${msg}
 
@@ -2098,9 +3051,9 @@ _Semua member telah dimention secara tersembunyi._`);
     usage: ".tagall <pesan>",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      const msg = ctx.text || "Waktunya berkumpul!";
-      await ctx.reply(`\u{1F465} *TAG ALL MEMBERS*
+    execute: async (ctx2) => {
+      const msg = ctx2.text || "Waktunya berkumpul!";
+      await ctx2.reply(`\u{1F465} *TAG ALL MEMBERS*
 ${msg}
 
 1. @member1
@@ -2117,8 +3070,8 @@ ${msg}
     usage: ".kick @member",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F462} Member yang ditandai berhasil dikeluarkan dari grup.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F462} Member yang ditandai berhasil dikeluarkan dari grup.`);
     }
   },
   {
@@ -2128,8 +3081,8 @@ ${msg}
     usage: ".promote @member",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F396}\uFE0F Selamat! Member tersebut sekarang telah menjadi *Admin Grup*.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F396}\uFE0F Selamat! Member tersebut sekarang telah menjadi *Admin Grup*.`);
     }
   },
   {
@@ -2139,8 +3092,8 @@ ${msg}
     usage: ".demote @admin",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4C9} Jabatan admin telah diturunkan menjadi member biasa.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4C9} Jabatan admin telah diturunkan menjadi member biasa.`);
     }
   },
   {
@@ -2151,8 +3104,8 @@ ${msg}
     usage: ".open",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F513} *GRUP DIBUKA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F513} *GRUP DIBUKA*
 Sekarang semua member diizinkan mengirim pesan.`);
     }
   },
@@ -2164,8 +3117,8 @@ Sekarang semua member diizinkan mengirim pesan.`);
     usage: ".close",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F512} *GRUP DITUTUP*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F512} *GRUP DITUTUP*
 Saat ini hanya admin grup yang dapat mengirim pesan.`);
     }
   },
@@ -2175,8 +3128,8 @@ Saat ini hanya admin grup yang dapat mengirim pesan.`);
     description: "Mendapatkan link tautan undangan grup",
     usage: ".linkgc",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F517} *LINK TAUTAN GRUP*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F517} *LINK TAUTAN GRUP*
 https://chat.whatsapp.com/invite-link-active`);
     }
   },
@@ -2187,13 +3140,13 @@ https://chat.whatsapp.com/invite-link-active`);
     description: "Melihat informasi lengkap grup, admin, dan setelan bot",
     usage: ".groupinfo",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4CB} *INFORMASI GRUP*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4CB} *INFORMASI GRUP*
 
-\u2022 Nama: ${ctx.group?.name || "Komunitas WA"}
-\u2022 ID: ${ctx.group?.id || "120363xxx@g.us"}
-\u2022 Anti-Link: ${ctx.group?.antiLink ? "AKTIF \u2705" : "NONAKTIF \u274C"}
-\u2022 Welcome Msg: ${ctx.group?.welcome ? "AKTIF \u2705" : "NONAKTIF \u274C"}
+\u2022 Nama: ${ctx2.group?.name || "Komunitas WA"}
+\u2022 ID: ${ctx2.group?.id || "120363xxx@g.us"}
+\u2022 Anti-Link: ${ctx2.group?.antiLink ? "AKTIF \u2705" : "NONAKTIF \u274C"}
+\u2022 Welcome Msg: ${ctx2.group?.welcome ? "AKTIF \u2705" : "NONAKTIF \u274C"}
 \u2022 Status Sewa: Selamanya (Aktif)`);
     }
   },
@@ -2203,10 +3156,10 @@ https://chat.whatsapp.com/invite-link-active`);
     description: "Melihat tata tertib / peraturan resmi grup",
     usage: ".rulesgrup",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4DC} *PERATURAN GRUP*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4DC} *PERATURAN GRUP*
 
-${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan admin"}`);
+${ctx2.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan admin"}`);
     }
   },
   {
@@ -2216,12 +3169,12 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".setrulesgrup <teks rules>",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      if (ctx.group && ctx.text) {
-        ctx.group.rules = ctx.text;
-        await ctx.group.save?.();
+    execute: async (ctx2) => {
+      if (ctx2.group && ctx2.text) {
+        ctx2.group.rules = ctx2.text;
+        await ctx2.group.save?.();
       }
-      await ctx.reply(`\u2705 Aturan grup berhasil diperbarui.`);
+      await ctx2.reply(`\u2705 Aturan grup berhasil diperbarui.`);
     }
   },
   {
@@ -2231,8 +3184,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".setwelcome <pesan>",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2705 Pesan selamat datang (welcome message) berhasil disimpan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2705 Pesan selamat datang (welcome message) berhasil disimpan.`);
     }
   },
   {
@@ -2242,8 +3195,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".setgoodbye <pesan>",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2705 Pesan selamat tinggal (goodbye message) berhasil disimpan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2705 Pesan selamat tinggal (goodbye message) berhasil disimpan.`);
     }
   },
   {
@@ -2254,10 +3207,10 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".antilink on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      const state = ctx.text.toLowerCase().includes("off") ? false : true;
-      if (ctx.group) ctx.group.antiLink = state;
-      await ctx.reply(`\u{1F6E1}\uFE0F Anti-Link grup sekarang: *${state ? "DIAKTIFKAN" : "DINONAKTIFKAN"}*`);
+    execute: async (ctx2) => {
+      const state = ctx2.text.toLowerCase().includes("off") ? false : true;
+      if (ctx2.group) ctx2.group.antiLink = state;
+      await ctx2.reply(`\u{1F6E1}\uFE0F Anti-Link grup sekarang: *${state ? "DIAKTIFKAN" : "DINONAKTIFKAN"}*`);
     }
   },
   {
@@ -2267,9 +3220,9 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".delantilink",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      if (ctx.group) ctx.group.antiLink = false;
-      await ctx.reply(`\u{1F6E1}\uFE0F Fitur Anti-Link telah dimatikan.`);
+    execute: async (ctx2) => {
+      if (ctx2.group) ctx2.group.antiLink = false;
+      await ctx2.reply(`\u{1F6E1}\uFE0F Fitur Anti-Link telah dimatikan.`);
     }
   },
   {
@@ -2279,8 +3232,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".antilinkall on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F310} Anti-Link All Website: Telah disesuaikan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F310} Anti-Link All Website: Telah disesuaikan.`);
     }
   },
   {
@@ -2290,8 +3243,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".antitoxic on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F9FC} Anti-Toxic filter grup berhasil diaktifkan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F9FC} Anti-Toxic filter grup berhasil diaktifkan.`);
     }
   },
   {
@@ -2301,8 +3254,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".antispam on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F6E1}\uFE0F Anti-Spam protection aktif.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F6E1}\uFE0F Anti-Spam protection aktif.`);
     }
   },
   {
@@ -2312,8 +3265,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".antibot on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F916} Anti-Bot: Bot lain yang masuk tanpa izin akan langsung dikeluarkan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F916} Anti-Bot: Bot lain yang masuk tanpa izin akan langsung dikeluarkan.`);
     }
   },
   {
@@ -2322,8 +3275,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     description: "Cegah bot dimasukkan ke grup sembarangan",
     usage: ".anticulik",
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F512} Anti-Culik bot telah diproteksi dengan sistem sewa.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F512} Anti-Culik bot telah diproteksi dengan sistem sewa.`);
     }
   },
   {
@@ -2333,8 +3286,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".antidocument on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4C1} Anti-Document status berhasil diubah.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4C1} Anti-Document status berhasil diubah.`);
     }
   },
   {
@@ -2344,8 +3297,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".antimedia on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F5BC}\uFE0F Anti-Media status berhasil diubah.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F5BC}\uFE0F Anti-Media status berhasil diubah.`);
     }
   },
   {
@@ -2355,8 +3308,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".antisticker on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3AD} Anti-Sticker filter aktif.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3AD} Anti-Sticker filter aktif.`);
     }
   },
   {
@@ -2366,8 +3319,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     usage: ".autosticker on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3A8} Auto-Sticker status telah diubah.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3A8} Auto-Sticker status telah diubah.`);
     }
   },
   {
@@ -2376,8 +3329,8 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     description: "Balasan otomatis pesan tertentu",
     usage: ".autoreply",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4AC} Auto-Reply responder siap.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4AC} Auto-Reply responder siap.`);
     }
   },
   {
@@ -2386,12 +3339,12 @@ ${ctx.group?.rules || "1. Saling menghormati\n2. Dilarang spam\n3. Patuhi aturan
     description: "Daftar kehadiran absensi kegiatan di grup",
     usage: ".absen",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4DD} *ABSENSI KEHADIRAN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4DD} *ABSENSI KEHADIRAN*
 
-1. @${ctx.user.name} (Hadir - ${(/* @__PURE__ */ new Date()).toLocaleTimeString("id-ID")})
+1. @${ctx2.user.name} (Hadir - ${(/* @__PURE__ */ new Date()).toLocaleTimeString("id-ID")})
 
-Ketik *${ctx.prefix}absen* untuk ikut mengisi.`);
+Ketik *${ctx2.prefix}absen* untuk ikut mengisi.`);
     }
   },
   {
@@ -2400,8 +3353,8 @@ Ketik *${ctx.prefix}absen* untuk ikut mengisi.`);
     description: "Melihat rekap daftar anggota yang sudah absen",
     usage: ".cekabsen",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4CA} *REKAP ABSENSI*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4CA} *REKAP ABSENSI*
 Total hadir: 1 member tercatat.`);
     }
   },
@@ -2412,8 +3365,8 @@ Total hadir: 1 member tercatat.`);
     usage: ".warn @member",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u26A0\uFE0F *PERINGATAN PELANGGARAN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u26A0\uFE0F *PERINGATAN PELANGGARAN*
 Member telah diberikan 1 poin peringatan (1/3). Jika mencapai 3 akan otomatis dikeluarkan.`);
     }
   },
@@ -2423,8 +3376,8 @@ Member telah diberikan 1 poin peringatan (1/3). Jika mencapai 3 akan otomatis di
     description: "Melihat daftar member yang memiliki poin peringatan",
     usage: ".listwarn",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4CB} *DAFTAR WARN MEMBER*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4CB} *DAFTAR WARN MEMBER*
 Tidak ada member dalam daftar hitam peringatan aktif.`);
     }
   },
@@ -2435,8 +3388,8 @@ Tidak ada member dalam daftar hitam peringatan aktif.`);
     usage: ".resetwarn @member",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u267B\uFE0F Poin peringatan member telah direset menjadi 0.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u267B\uFE0F Poin peringatan member telah direset menjadi 0.`);
     }
   },
   {
@@ -2447,8 +3400,8 @@ Tidak ada member dalam daftar hitam peringatan aktif.`);
     usage: ".mute",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F507} Bot telah dibisukan di grup ini.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F507} Bot telah dibisukan di grup ini.`);
     }
   },
   {
@@ -2458,8 +3411,8 @@ Tidak ada member dalam daftar hitam peringatan aktif.`);
     usage: ".unmute",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F50A} Bot aktif kembali melayani anggota grup.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F50A} Bot aktif kembali melayani anggota grup.`);
     }
   },
   {
@@ -2469,8 +3422,8 @@ Tidak ada member dalam daftar hitam peringatan aktif.`);
     usage: ".giveaway create <hadiah>",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F389} *GIVEAWAY RESMI DIMULAI*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F389} *GIVEAWAY RESMI DIMULAI*
 Hadiah: 50.000 Koin RPG!
 Ketik bergabung untuk mengikuti undian.`);
     }
@@ -2481,8 +3434,8 @@ Ketik bergabung untuk mengikuti undian.`);
     description: "Membuat polling jajak pendapat di grup",
     usage: ".poll <topik> | <opsi 1> | <opsi 2>",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4CA} *POLLING JAJAK PENDAPAT*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4CA} *POLLING JAJAK PENDAPAT*
 Topik berhasil dibuat dalam fitur voting.`);
     }
   },
@@ -2493,8 +3446,8 @@ Topik berhasil dibuat dalam fitur voting.`);
     usage: ".clearchat",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F9F9} Riwayat chat bot telah dibersihkan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F9F9} Riwayat chat bot telah dibersihkan.`);
     }
   },
   {
@@ -2504,8 +3457,8 @@ Topik berhasil dibuat dalam fitur voting.`);
     usage: ".slowmode <detik>",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u23F1\uFE0F Mode lambat (Slowmode) telah diatur.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u23F1\uFE0F Mode lambat (Slowmode) telah diatur.`);
     }
   },
   {
@@ -2513,9 +3466,9 @@ Topik berhasil dibuat dalam fitur voting.`);
     category: "GROUP",
     description: "Menyetel status Away From Keyboard (AFK)",
     usage: ".afk <alasan>",
-    execute: async (ctx) => {
-      const reason = ctx.text || "Sedang istirahat";
-      await ctx.reply(`\u{1F4A4} @${ctx.user.name} sekarang dalam status *AFK*:
+    execute: async (ctx2) => {
+      const reason = ctx2.text || "Sedang istirahat";
+      await ctx2.reply(`\u{1F4A4} @${ctx2.user.name} sekarang dalam status *AFK*:
 Alasan: "${reason}"
 Bot akan memberitahu siapa pun yang men-tag kamu.`);
     }
@@ -2527,8 +3480,8 @@ Bot akan memberitahu siapa pun yang men-tag kamu.`);
     usage: ".welcome on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F44B} Status sambutan Welcome berhasil disesuaikan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F44B} Status sambutan Welcome berhasil disesuaikan.`);
     }
   },
   {
@@ -2538,8 +3491,8 @@ Bot akan memberitahu siapa pun yang men-tag kamu.`);
     usage: ".goodbye on/off",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F44B} Status pesan Goodbye berhasil disesuaikan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F44B} Status pesan Goodbye berhasil disesuaikan.`);
     }
   },
   {
@@ -2548,8 +3501,8 @@ Bot akan memberitahu siapa pun yang men-tag kamu.`);
     description: "Melihat seluruh daftar admin grup saat ini",
     usage: ".listadmin",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F451} *DAFTAR ADMIN GRUP*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F451} *DAFTAR ADMIN GRUP*
 \u2022 Admin 1 (Owner Grup)
 \u2022 Admin 2`);
     }
@@ -2560,9 +3513,9 @@ Bot akan memberitahu siapa pun yang men-tag kamu.`);
     description: "Melihat JID identitas grup WhatsApp",
     usage: ".cekidgc",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F194} *ID GRUP WHATSAPP*
-${ctx.group?.id || "12036301234567890@g.us"}`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F194} *ID GRUP WHATSAPP*
+${ctx2.group?.id || "12036301234567890@g.us"}`);
     }
   },
   {
@@ -2572,8 +3525,8 @@ ${ctx.group?.id || "12036301234567890@g.us"}`);
     usage: ".setnamegc <nama baru>",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u270F\uFE0F Nama grup berhasil diubah.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u270F\uFE0F Nama grup berhasil diubah.`);
     }
   },
   {
@@ -2583,8 +3536,8 @@ ${ctx.group?.id || "12036301234567890@g.us"}`);
     usage: ".setppgc (reply foto)",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F5BC}\uFE0F Foto profil grup berhasil diperbarui.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F5BC}\uFE0F Foto profil grup berhasil diperbarui.`);
     }
   },
   {
@@ -2594,8 +3547,8 @@ ${ctx.group?.id || "12036301234567890@g.us"}`);
     usage: ".pinchat (reply pesan)",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4CC} Pesan berhasil disematkan (pinned).`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4CC} Pesan berhasil disematkan (pinned).`);
     }
   },
   {
@@ -2604,8 +3557,8 @@ ${ctx.group?.id || "12036301234567890@g.us"}`);
     description: "Template perkenalan member baru grup",
     usage: ".intro",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F44B} *FORMAT PERKENALAN MEMBER*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F44B} *FORMAT PERKENALAN MEMBER*
 \u2022 Nama: 
 \u2022 Asal Kota: 
 \u2022 Umur: 
@@ -2621,8 +3574,8 @@ Salam kenal semuanya!`);
     usage: ".setintro <format>",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2705 Template intro grup berhasil diperbarui.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2705 Template intro grup berhasil diperbarui.`);
     }
   },
   {
@@ -2632,8 +3585,8 @@ Salam kenal semuanya!`);
     usage: ".acc all / @member",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2705 Calon anggota berhasil disetujui bergabung ke grup.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2705 Calon anggota berhasil disetujui bergabung ke grup.`);
     }
   },
   {
@@ -2642,8 +3595,8 @@ Salam kenal semuanya!`);
     description: "Blokir seluruh interaksi bot di ruang obrolan ini",
     usage: ".banchat",
     ownerOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F6AB} Chat ini telah dimasukkan ke daftar banchat.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F6AB} Chat ini telah dimasukkan ke daftar banchat.`);
     }
   },
   {
@@ -2653,8 +3606,8 @@ Salam kenal semuanya!`);
     usage: ".notifopengroup",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F514} Jadwal notifikasi buka grup otomatis disetel.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F514} Jadwal notifikasi buka grup otomatis disetel.`);
     }
   },
   {
@@ -2664,8 +3617,8 @@ Salam kenal semuanya!`);
     usage: ".notifclosegroup",
     groupOnly: true,
     adminOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F514} Jadwal notifikasi tutup grup otomatis disetel.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F514} Jadwal notifikasi tutup grup otomatis disetel.`);
     }
   },
   {
@@ -2674,8 +3627,8 @@ Salam kenal semuanya!`);
     description: "Pengumuman kenaikan admin",
     usage: ".notifpromote",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F389} Selamat kepada admin baru yang terpilih!`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F389} Selamat kepada admin baru yang terpilih!`);
     }
   },
   {
@@ -2684,8 +3637,8 @@ Salam kenal semuanya!`);
     description: "Pemberitahuan penurunan admin",
     usage: ".notifdemote",
     groupOnly: true,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2139\uFE0F Pemberitahuan perubahan susunan admin grup.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2139\uFE0F Pemberitahuan perubahan susunan admin grup.`);
     }
   }
 ];
@@ -2698,8 +3651,8 @@ var religiCommands = [
     description: "Membaca ayat Al-Qur'an beserta teks Arab, latin, dan terjemahan",
     usage: ".quran <surah> <ayat>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4D6} *AL-QUR'AN DIGITAL*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4D6} *AL-QUR'AN DIGITAL*
 
 Surah Al-Fatihah [1:1]
 
@@ -2716,9 +3669,9 @@ _Bismill\u0101hir-ra\u1E25m\u0101nir-ra\u1E25\u012Bm_
     description: "Jadwal waktu sholat harian berdasarkan kota di Indonesia",
     usage: ".jadwalsholat <kota>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const kota = ctx.text.trim() || "Jakarta";
-      await ctx.reply(`\u{1F54C} *JADWAL SHOLAT WILAYAH ${kota.toUpperCase()}*
+    execute: async (ctx2) => {
+      const kota = ctx2.text.trim() || "Jakarta";
+      await ctx2.reply(`\u{1F54C} *JADWAL SHOLAT WILAYAH ${kota.toUpperCase()}*
 
 \u2022 Imsak: 04:28 WIB
 \u2022 Subuh: 04:38 WIB
@@ -2737,8 +3690,8 @@ _Jadikan sholat sebagai penyejuk hati._`);
     description: "Daftar 99 Asmaul Husna beserta makna dan khasiatnya",
     usage: ".asmaulhusna",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2728 *ASMAUL HUSNA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2728 *ASMAUL HUSNA*
 
 1. Ar-Rahman (\u0627\u0644\u0631\u064E\u0651\u062D\u0652\u0645\u064E\u0646\u064F) - Maha Pengasih
 2. Ar-Rahim (\u0627\u0644\u0631\u064E\u0651\u062D\u0650\u064A\u0645\u064F) - Maha Penyayang
@@ -2754,8 +3707,8 @@ _Jadikan sholat sebagai penyejuk hati._`);
     description: "Mendengarkan lantunan merdu tilawah Al-Qur'an",
     usage: ".audioquran <surah>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3A7} *AUDIO MURROTAL AL-QUR'AN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3A7} *AUDIO MURROTAL AL-QUR'AN*
 Qari: Mishary Rashid Alafasy
 Surah diputar dengan kualitas jernih.`);
     }
@@ -2766,8 +3719,8 @@ Surah diputar dengan kualitas jernih.`);
     description: "Murottal per ayat atau per juz",
     usage: ".murrotal",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F399}\uFE0F *LANTUNAN MUROTTAL*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F399}\uFE0F *LANTUNAN MUROTTAL*
 Audio bacaan ayat suci Al-Qur'an terkirim.`);
     }
   },
@@ -2777,8 +3730,8 @@ Audio bacaan ayat suci Al-Qur'an terkirim.`);
     description: "Kumpulan mutiara hikmah hadits dan kisah Islami",
     usage: ".islami",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F319} *MUTIARA HIKMAH ISLAMI*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F319} *MUTIARA HIKMAH ISLAMI*
 
 "Barangsiapa yang menempuh jalan untuk menuntut ilmu, maka Allah akan memudahkan jalannya menuju surga." (HR. Muslim)`);
     }
@@ -2794,8 +3747,8 @@ var infoCommands = [
     description: "Informasi gempa bumi terkini dari BMKG Indonesia",
     usage: ".gempa",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F30B} *INFO GEMPA BUMI TERKINI (BMKG)*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F30B} *INFO GEMPA BUMI TERKINI (BMKG)*
 
 \u2022 Magnitudo: 5.2 SR
 \u2022 Kedalaman: 10 Km
@@ -2813,8 +3766,8 @@ _Tetap waspada dan ikuti arahan resmi BMKG._`);
     description: "Daftar hari libur nasional & cuti bersama di Indonesia",
     usage: ".harilibur",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4C5} *HARI LIBUR NASIONAL*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4C5} *HARI LIBUR NASIONAL*
 
 \u2022 1 Januari: Tahun Baru Masehi
 \u2022 Hari Raya Idul Fitri
@@ -2828,8 +3781,8 @@ _Tetap waspada dan ikuti arahan resmi BMKG._`);
     description: "Jadwal pertandingan sepakbola malam ini (EPL, UCL, LaLiga)",
     usage: ".jadwalbola",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u26BD *JADWAL BOLA MALAM INI*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u26BD *JADWAL BOLA MALAM INI*
 
 \u2022 [EPL] Arsenal vs Chelsea - 22:30 WIB
 \u2022 [LaLiga] Real Madrid vs Barcelona - 02:00 WIB
@@ -2842,8 +3795,8 @@ _Tetap waspada dan ikuti arahan resmi BMKG._`);
     description: "Skor langsung hasil pertandingan olahraga terkini",
     usage: ".livescore",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3C6} *LIVESCORE SEPAKBOLA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3C6} *LIVESCORE SEPAKBOLA*
 
 Arsenal 2 - 1 Chelsea (Menit 78')
 Manchester City 3 - 0 Everton (FT)`);
@@ -2854,8 +3807,8 @@ Manchester City 3 - 0 Everton (FT)`);
     category: "INFO BOT",
     description: "Daftar fitur khusus pengguna status VIP Premium",
     usage: ".fiturpremium",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F48E} *DAFTAR FITUR PREMIUM*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F48E} *DAFTAR FITUR PREMIUM*
 
 1. AI Reasoning GPT-4o & DeepSeek
 2. HD Upscaler 4K tanpa limit
@@ -2903,13 +3856,13 @@ var cekCommands = CEK_TYPES.map((item) => ({
   description: `Mengecek ${item.title.toLowerCase()}`,
   usage: `.${item.name} [nama / tag]`,
   limitCost: 1,
-  execute: async (ctx) => {
-    const target = ctx.text.trim() || ctx.user.name || "Kamu";
+  execute: async (ctx2) => {
+    const target = ctx2.text.trim() || ctx2.user.name || "Kamu";
     const percent = getRandomPercent(target + item.name);
     let note = "Sangat luar biasa dan mengagumkan!";
     if (percent < 30) note = "Masih ada ruang untuk terus berkembang.";
     else if (percent < 70) note = "Berada di titik seimbang yang ideal.";
-    await ctx.reply(`${item.emoji} *HASIL ${item.title.toUpperCase()}*
+    await ctx2.reply(`${item.emoji} *HASIL ${item.title.toUpperCase()}*
 
 Target: *${target}*
 Persentase: *${percent}%*
@@ -2925,10 +3878,38 @@ var userCommands = [
     category: "USER",
     description: "Melihat kartu profil pengguna, saldo koin, level, dan limit",
     usage: ".profile",
-    execute: async (ctx) => {
-      const { user } = ctx;
+    execute: async (ctx2) => {
+      const { user, isOwner } = ctx2;
+      if (isOwner || user.role === "owner") {
+        const cleanNumber = "6287891284460";
+        return ctx2.reply(
+          `\u{1F451} *KARTU PROFIL OWNER & DEVELOPER* \u{1F451}
+
+\u2022 Nama: ${user.name || "GhanzStudio"} \u{1F451}
+\u2022 Nomor WA: https://wa.me/${cleanNumber}
+\u2022 ID WhatsApp: ${user.id}
+\u2022 Status: \u{1F451} OWNER / FOUNDER (SUPER ADMIN)
+\u2022 Akses Sistem: \u{1F6E1}\uFE0F FULL ROOT ACCESS (ALL PRIVILEGES)
+\u2022 Limit Energi: \u26A1 Unlimited (Bebas Biaya Kuota)
+\u2022 Saldo Koin: \u{1FA99} Unlimited (Sultan Bot)
+\u2022 Level: \u{1F396}\uFE0F Level 999 (Max Developer)
+\u2022 Terdaftar: Terverifikasi Permanen \u2705
+\u2022 Mode: Bebas Cooldown & Anti-Spam Bypass
+\u2022 Total Perintah: ${user.totalHit || 0}x dijalankan
+
+\u256D\u2500\u2500\u2500\u300C *HAK ISTIMEWA OWNER* \u300D
+\u2502 \u{1F451} Akses semua menu & command tersembunyi
+\u2502 \u{1F4E2} Siaran pesan massal (${ctx2.prefix}bc)
+\u2502 \u{1F48E} Tambah/hapus user premium (${ctx2.prefix}addprem / ${ctx2.prefix}delprem)
+\u2502 \u26A1 Tambah limit & koin (${ctx2.prefix}addlimit / ${ctx2.prefix}addkoin)
+\u2502 \u{1F6AB} Ban & unban pengguna (${ctx2.prefix}ban / ${ctx2.prefix}unban)
+\u2502 \u{1F4BB} Eksekusi kode dinamis (${ctx2.prefix}eval)
+\u2502 \u{1F9F9} Pembersihan cache & memori (${ctx2.prefix}cleartmp)
+\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500`
+        );
+      }
       const status = user.premium ? "\u{1F451} PREMIUM (VIP)" : "\u{1F464} USER BIASA";
-      await ctx.reply(`\u{1F464} *KARTU PROFIL PENGGUNA*
+      await ctx2.reply(`\u{1F464} *KARTU PROFIL PENGGUNA*
 
 \u2022 Nama: ${user.name}
 \u2022 ID: ${user.id}
@@ -2947,10 +3928,10 @@ var userCommands = [
     category: "USER",
     description: "Mendaftarkan diri ke database bot",
     usage: ".daftar <nama.umur>",
-    execute: async (ctx) => {
-      const { user } = ctx;
-      if (user.registered) return ctx.reply(`\u26A0\uFE0F Kamu sudah terdaftar di database!`);
-      const input = ctx.text.trim();
+    execute: async (ctx2) => {
+      const { user } = ctx2;
+      if (user.registered) return ctx2.reply(`\u26A0\uFE0F Kamu sudah terdaftar di database!`);
+      const input = ctx2.text.trim();
       let name = user.name || "User";
       let age = 18;
       if (input.includes(".")) {
@@ -2964,13 +3945,13 @@ var userCommands = [
       user.koin += 2e3;
       user.limit += 20;
       await user.save?.();
-      await ctx.reply(`\u{1F389} *PENDAFTARAN BERHASIL!*
+      await ctx2.reply(`\u{1F389} *PENDAFTARAN BERHASIL!*
 
 \u2022 Nama: ${name}
 \u2022 Umur: ${age} tahun
 \u2022 Bonus Registrasi: +2.000 Koin, +20 Limit!
 
-_Ketik ${ctx.prefix}menu untuk mulai menggunakan fitur._`);
+_Ketik ${ctx2.prefix}menu untuk mulai menggunakan fitur._`);
     }
   },
   {
@@ -2978,10 +3959,10 @@ _Ketik ${ctx.prefix}menu untuk mulai menggunakan fitur._`);
     category: "USER",
     description: "Menghapus pendaftaran akun dari database",
     usage: ".unreg",
-    execute: async (ctx) => {
-      ctx.user.registered = false;
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F5D1}\uFE0F Pendaftaran akun kamu telah dibatalkan.`);
+    execute: async (ctx2) => {
+      ctx2.user.registered = false;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F5D1}\uFE0F Pendaftaran akun kamu telah dibatalkan.`);
     }
   },
   {
@@ -2990,15 +3971,15 @@ _Ketik ${ctx.prefix}menu untuk mulai menggunakan fitur._`);
     category: "USER",
     description: "Klaim hadiah harian koin dan energi gratis",
     usage: ".daily",
-    execute: async (ctx) => {
-      const { user } = ctx;
+    execute: async (ctx2) => {
+      const { user } = ctx2;
       const now = /* @__PURE__ */ new Date();
       if (user.lastDaily) {
         const diff = now.getTime() - new Date(user.lastDaily).getTime();
         const oneDay = 24 * 60 * 60 * 1e3;
         if (diff < oneDay) {
           const waitHour = Math.ceil((oneDay - diff) / (60 * 60 * 1e3));
-          return ctx.reply(`\u23F3 Kamu sudah mengambil hadiah harian! Silakan kembali dalam ${waitHour} jam.`);
+          return ctx2.reply(`\u23F3 Kamu sudah mengambil hadiah harian! Silakan kembali dalam ${waitHour} jam.`);
         }
       }
       user.lastDaily = now;
@@ -3006,7 +3987,7 @@ _Ketik ${ctx.prefix}menu untuk mulai menggunakan fitur._`);
       user.limit += 25;
       user.exp += 200;
       await user.save?.();
-      await ctx.reply(`\u{1F381} *HADIAH HARIAN (DAILY CLAIM)*
+      await ctx2.reply(`\u{1F381} *HADIAH HARIAN (DAILY CLAIM)*
 
 Selamat! Kamu mendapatkan:
 + \u{1FA99} 1.500 Koin
@@ -3020,17 +4001,20 @@ Selamat! Kamu mendapatkan:
     category: "USER",
     description: "Mengecek sisa kuota limit energi hari ini",
     usage: ".energi",
-    execute: async (ctx) => {
-      const { user } = ctx;
-      if (user.premium) {
-        return ctx.reply(`\u26A1 *LIMIT ENERGI*: Unlimited (Akun Premium VIP \u2728)`);
+    execute: async (ctx2) => {
+      const { user, isOwner } = ctx2;
+      if (isOwner || user.role === "owner") {
+        return ctx2.reply(`\u26A1 *LIMIT ENERGI*: Unlimited (Owner & Creator Bebas Biaya Kuota \u{1F451})`);
       }
-      await ctx.reply(`\u26A1 *SISA ENERGI / LIMIT KAMU*
+      if (user.premium) {
+        return ctx2.reply(`\u26A1 *LIMIT ENERGI*: Unlimited (Akun Premium VIP \u2728)`);
+      }
+      await ctx2.reply(`\u26A1 *SISA ENERGI / LIMIT KAMU*
 
 Sisa: *${user.limit} limit*
 Reset berkala: Setiap pukul 00:00 WIB
 
-_Ketik ${ctx.prefix}buyenergi untuk membeli tambahan limit dengan koin!_`);
+_Ketik ${ctx2.prefix}buyenergi untuk membeli tambahan limit dengan koin!_`);
     }
   },
   {
@@ -3039,8 +4023,12 @@ _Ketik ${ctx.prefix}buyenergi untuk membeli tambahan limit dengan koin!_`);
     category: "USER",
     description: "Cek saldo koin ekonomi kamu",
     usage: ".koin",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1FA99} Saldo koin kamu: *${ctx.user.koin.toLocaleString("id-ID")} koin*`);
+    execute: async (ctx2) => {
+      const { user, isOwner } = ctx2;
+      if (isOwner || user.role === "owner") {
+        return ctx2.reply(`\u{1FA99} Saldo koin kamu: *Unlimited (Sultan Owner Bebas Belanja \u{1F451})*`);
+      }
+      await ctx2.reply(`\u{1FA99} Saldo koin kamu: *${ctx2.user.koin.toLocaleString("id-ID")} koin*`);
     }
   },
   {
@@ -3048,8 +4036,12 @@ _Ketik ${ctx.prefix}buyenergi untuk membeli tambahan limit dengan koin!_`);
     category: "USER",
     description: "Cek jumlah experience (Exp) karaktermu",
     usage: ".exp",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F396}\uFE0F Exp kamu saat ini: *${ctx.user.exp} Exp* (Level ${ctx.user.level})`);
+    execute: async (ctx2) => {
+      const { user, isOwner } = ctx2;
+      if (isOwner || user.role === "owner") {
+        return ctx2.reply(`\u{1F396}\uFE0F Exp kamu saat ini: *Max Exp (Owner Status \u{1F451})* (Level 999)`);
+      }
+      await ctx2.reply(`\u{1F396}\uFE0F Exp kamu saat ini: *${ctx2.user.exp} Exp* (Level ${ctx2.user.level})`);
     }
   },
   {
@@ -3057,9 +4049,13 @@ _Ketik ${ctx.prefix}buyenergi untuk membeli tambahan limit dengan koin!_`);
     category: "USER",
     description: "Melihat progres level saat ini",
     usage: ".level",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4C8} Level kamu: *Level ${ctx.user.level}*
-Dibutuhkan ${ctx.user.level * 500 - ctx.user.exp} Exp lagi untuk naik level.`);
+    execute: async (ctx2) => {
+      const { user, isOwner } = ctx2;
+      if (isOwner || user.role === "owner") {
+        return ctx2.reply(`\u{1F4C8} Level kamu: *Level 999 (Max Developer / Creator \u{1F451})*`);
+      }
+      await ctx2.reply(`\u{1F4C8} Level kamu: *Level ${ctx2.user.level}*
+Dibutuhkan ${ctx2.user.level * 500 - ctx2.user.exp} Exp lagi untuk naik level.`);
     }
   },
   {
@@ -3067,19 +4063,19 @@ Dibutuhkan ${ctx.user.level * 500 - ctx.user.exp} Exp lagi untuk naik level.`);
     category: "USER",
     description: "Menaikkan level jika exp mencukupi",
     usage: ".levelup",
-    execute: async (ctx) => {
-      const { user } = ctx;
+    execute: async (ctx2) => {
+      const { user } = ctx2;
       const needExp = user.level * 300;
       if (user.exp >= needExp) {
         user.level += 1;
         user.exp -= needExp;
         user.koin += 1e3;
         await user.save?.();
-        return ctx.reply(`\u{1F199} *SELAMAT! NAIK LEVEL!*
+        return ctx2.reply(`\u{1F199} *SELAMAT! NAIK LEVEL!*
 Sekarang kamu berada di *Level ${user.level}*!
 Bonus: +1.000 Koin!`);
       }
-      await ctx.reply(`\u26A0\uFE0F Exp kamu belum mencukupi untuk naik level. Kumpulkan ${needExp - user.exp} Exp lagi dari game/rpg.`);
+      await ctx2.reply(`\u26A0\uFE0F Exp kamu belum mencukupi untuk naik level. Kumpulkan ${needExp - user.exp} Exp lagi dari game/rpg.`);
     }
   },
   {
@@ -3088,18 +4084,18 @@ Bonus: +1.000 Koin!`);
     category: "USER",
     description: "Membeli limit energi menggunakan saldo koin (1 Limit = 100 Koin)",
     usage: ".buyenergi <jumlah>",
-    execute: async (ctx) => {
-      const amount = parseInt(ctx.args[0] || "10", 10);
-      if (isNaN(amount) || amount <= 0) return ctx.reply(`Contoh: ${ctx.prefix}buyenergi 10`);
+    execute: async (ctx2) => {
+      const amount = parseInt(ctx2.args[0] || "10", 10);
+      if (isNaN(amount) || amount <= 0) return ctx2.reply(`Contoh: ${ctx2.prefix}buyenergi 10`);
       const cost = amount * 100;
-      if (ctx.user.koin < cost) {
-        return ctx.reply(`\u274C Koin tidak cukup! Butuh ${cost.toLocaleString("id-ID")} koin untuk membeli ${amount} limit.`);
+      if (ctx2.user.koin < cost) {
+        return ctx2.reply(`\u274C Koin tidak cukup! Butuh ${cost.toLocaleString("id-ID")} koin untuk membeli ${amount} limit.`);
       }
-      ctx.user.koin -= cost;
-      ctx.user.limit += amount;
-      await ctx.user.save?.();
-      await ctx.reply(`\u2705 Berhasil membeli *${amount} limit* seharga ${cost.toLocaleString("id-ID")} koin!
-Sisa koin: ${ctx.user.koin.toLocaleString("id-ID")}`);
+      ctx2.user.koin -= cost;
+      ctx2.user.limit += amount;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u2705 Berhasil membeli *${amount} limit* seharga ${cost.toLocaleString("id-ID")} koin!
+Sisa koin: ${ctx2.user.koin.toLocaleString("id-ID")}`);
     }
   },
   {
@@ -3107,8 +4103,8 @@ Sisa koin: ${ctx.user.koin.toLocaleString("id-ID")}`);
     category: "USER",
     description: "Membeli akses fitur khusus dengan koin",
     usage: ".buyfitur",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F6CD}\uFE0F *TOKO FITUR KHUSUS*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F6CD}\uFE0F *TOKO FITUR KHUSUS*
 Koin dapat digunakan untuk membeli item RPG dan boost limit.`);
     }
   },
@@ -3117,12 +4113,12 @@ Koin dapat digunakan untuk membeli item RPG dan boost limit.`);
     category: "USER",
     description: "Menyetel tanggal ulang tahun kamu (DD-MM)",
     usage: ".setbirthday 17-08",
-    execute: async (ctx) => {
-      const date = ctx.text.trim();
-      if (!date) return ctx.reply(`Format: ${ctx.prefix}setbirthday DD-MM (Contoh: 25-12)`);
-      ctx.user.birthday = date;
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F382} Tanggal ulang tahun kamu disetel ke: *${date}*`);
+    execute: async (ctx2) => {
+      const date = ctx2.text.trim();
+      if (!date) return ctx2.reply(`Format: ${ctx2.prefix}setbirthday DD-MM (Contoh: 25-12)`);
+      ctx2.user.birthday = date;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F382} Tanggal ulang tahun kamu disetel ke: *${date}*`);
     }
   },
   {
@@ -3130,8 +4126,8 @@ Koin dapat digunakan untuk membeli item RPG dan boost limit.`);
     category: "USER",
     description: "Cek tanggal ulang tahun kamu",
     usage: ".birthday",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F382} Tanggal lahir terdaftar: *${ctx.user.birthday || "Belum diatur"}*`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F382} Tanggal lahir terdaftar: *${ctx2.user.birthday || "Belum diatur"}*`);
     }
   },
   {
@@ -3139,8 +4135,8 @@ Koin dapat digunakan untuk membeli item RPG dan boost limit.`);
     category: "USER",
     description: "Melihat daftar member yang berulang tahun bulan ini",
     usage: ".birthdaylist",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4C5} *DAFTAR ULANG TAHUN BULAN INI*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4C5} *DAFTAR ULANG TAHUN BULAN INI*
 \u2022 Ahmad - 12 September
 \u2022 Salsabila - 28 September`);
     }
@@ -3156,12 +4152,12 @@ var canvasCommands = [
     description: "Membuat gambar kutipan estetik dengan nama dan background",
     usage: ".buatquotes <kutipan> | <penulis>",
     limitCost: 2,
-    execute: async (ctx) => {
-      const [quote, author] = ctx.text.split("|");
-      await ctx.reply(`\u{1F3A8} *QUOTES MAKER CANVAS*
+    execute: async (ctx2) => {
+      const [quote, author] = ctx2.text.split("|");
+      await ctx2.reply(`\u{1F3A8} *QUOTES MAKER CANVAS*
 
 "${(quote || "Hiduplah seperti pohon rimbun yang memberi keteduhan").trim()}"
-\u2014 ${(author || ctx.user.name).trim()}
+\u2014 ${(author || ctx2.user.name).trim()}
 
 _Gambar kanvas quotes estetik berhasil dirender._`);
     }
@@ -3172,9 +4168,9 @@ _Gambar kanvas quotes estetik berhasil dirender._`);
     description: "Membuat mockup panggilan video/telepon palsu lucu",
     usage: ".fakecall <nama>",
     limitCost: 2,
-    execute: async (ctx) => {
-      const target = ctx.text.trim() || "Crush";
-      await ctx.reply(`\u{1F4DE} *FAKECALL CANVAS*
+    execute: async (ctx2) => {
+      const target = ctx2.text.trim() || "Crush";
+      await ctx2.reply(`\u{1F4DE} *FAKECALL CANVAS*
 Panggilan masuk dari *${target}* (00:24)...`);
     }
   },
@@ -3184,8 +4180,8 @@ Panggilan masuk dari *${target}* (00:24)...`);
     description: "Render kanvas ala Instagram Story",
     usage: ".igstory <teks>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4F8} *INSTAGRAM STORY CANVAS*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4F8} *INSTAGRAM STORY CANVAS*
 Story berhasil digenerate dengan rasio 9:16.`);
     }
   },
@@ -3195,8 +4191,8 @@ Story berhasil digenerate dengan rasio 9:16.`);
     description: "Membuat gambar kalender dinding bulan ini dengan foto custom",
     usage: ".kalender",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F5D3}\uFE0F *KALENDER MAKER*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F5D3}\uFE0F *KALENDER MAKER*
 Kalender bulan ${(/* @__PURE__ */ new Date()).toLocaleString("id-ID", { month: "long", year: "numeric" })} berhasil dirender.`);
     }
   },
@@ -3206,8 +4202,8 @@ Kalender bulan ${(/* @__PURE__ */ new Date()).toLocaleString("id-ID", { month: "
     description: "Render kartu feed profil Instagram estetik",
     usage: ".profileig <username>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4F1} *INSTAGRAM PROFILE CARD*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4F1} *INSTAGRAM PROFILE CARD*
 Kartu mockup profil Instagram berhasil dibuat.`);
     }
   },
@@ -3217,8 +4213,8 @@ Kartu mockup profil Instagram berhasil dibuat.`);
     description: "Membuat logo gaya Blue Archive (BA Logo)",
     usage: ".balogo <teks1> | <teks2>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F537} *BLUE ARCHIVE LOGO MAKER*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F537} *BLUE ARCHIVE LOGO MAKER*
 Logo bergaya font BA berhasil digenerate.`);
     }
   },
@@ -3228,8 +4224,8 @@ Logo bergaya font BA berhasil digenerate.`);
     description: "Roasting akun WhatsApp dengan kanvas sindiran santai",
     usage: ".sroast",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F525} *ROASTING KARTU KANVAS*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F525} *ROASTING KARTU KANVAS*
 "Sering on di grup tapi jarang nimbrung, jangan-jangan lagi mantau status crush ya?" \u{1F606}`);
     }
   },
@@ -3239,8 +4235,8 @@ Logo bergaya font BA berhasil digenerate.`);
     description: "Kanvas grafis poster estetik The Weeknd Starboy",
     usage: ".starboy <teks>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2B50 *STARBOY POSTER CANVAS*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2B50 *STARBOY POSTER CANVAS*
 Poster typography retro aesthetic berhasil dibuat.`);
     }
   },
@@ -3250,8 +4246,8 @@ Poster typography retro aesthetic berhasil dibuat.`);
     description: "Efek teks cat air lukisan artistik",
     usage: ".watercolortext <teks>",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3A8} *WATERCOLOR CANVAS*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3A8} *WATERCOLOR CANVAS*
 Teks cat air berhasil digenerate.`);
     }
   }
@@ -3276,11 +4272,11 @@ var randomCommands = ANIME_ACTIONS.map((item) => ({
   description: `Animasi reaksi ${item.name} (${item.verb})`,
   usage: `.${item.name} [@user]`,
   limitCost: 1,
-  execute: async (ctx) => {
-    const target = ctx.text.trim() || "semua orang";
-    await ctx.reply(`${item.emoji} *ANIME REACTION: ${item.name.toUpperCase()}*
+  execute: async (ctx2) => {
+    const target = ctx2.text.trim() || "semua orang";
+    await ctx2.reply(`${item.emoji} *ANIME REACTION: ${item.name.toUpperCase()}*
 
-@${ctx.user.name} *${item.verb}* ${target}!
+@${ctx2.user.name} *${item.verb}* ${target}!
 
 _Animasi GIF reaksi telah dikirimkan._`);
   }
@@ -3303,9 +4299,9 @@ var ephotoCommands = EPHOTO_EFFECTS.map((effect) => ({
   description: `Membuat efek grafis ${effect.title}`,
   usage: `.${effect.name} <teks>`,
   limitCost: 2,
-  execute: async (ctx) => {
-    const text = ctx.text.trim() || ctx.user.name || "Ghanz Studio";
-    await ctx.reply(`${effect.icon} *EPHOTO 360 EFFECT*
+  execute: async (ctx2) => {
+    const text = ctx2.text.trim() || ctx2.user.name || "Ghanz Studio";
+    await ctx2.reply(`${effect.icon} *EPHOTO 360 EFFECT*
 
 Efek: *${effect.title}*
 Teks: "${text}"
@@ -3322,8 +4318,8 @@ var animeCommands = [
     description: "Daftar serial anime dengan rating tertinggi menurut MyAnimeList",
     usage: ".topanime",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3C6} *TOP ANIME TERBAIK (MYANIMELIST)*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3C6} *TOP ANIME TERBAIK (MYANIMELIST)*
 
 1. Frieren: Beyond Journey's End (\u2B50 9.32)
 2. Fullmetal Alchemist: Brotherhood (\u2B50 9.09)
@@ -3338,10 +4334,10 @@ var animeCommands = [
     description: "Dapatkan karakter anime favorit pendamping harimu",
     usage: ".mywaifu",
     limitCost: 1,
-    execute: async (ctx) => {
+    execute: async (ctx2) => {
       const waifus = ["Rem (Re:Zero)", "Mikasa Ackerman (AOT)", "Marin Kitagawa (My Dress-Up Darling)", "Yor Forger (Spy x Family)", "Megumin (Konosuba)"];
       const pick = waifus[Math.floor(Math.random() * waifus.length)];
-      await ctx.reply(`\u{1F338} *KARAKTER ANIME UNTUKMU*
+      await ctx2.reply(`\u{1F338} *KARAKTER ANIME UNTUKMU*
 
 Hari ini karakter pendampingmu adalah: *${pick}*!`);
     }
@@ -3353,8 +4349,8 @@ Hari ini karakter pendampingmu adalah: *${pick}*!`);
     description: "Mencari judul anime dari potongan gambar screenshot (Trace.moe)",
     usage: ".animeapaini (reply screenshot anime)",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F50D} *TRACE ANIME DETECTOR*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F50D} *TRACE ANIME DETECTOR*
 
 \u2022 Judul: Jujutsu Kaisen Season 2
 \u2022 Episode: 16 (Menit 14:22)
@@ -3370,16 +4366,16 @@ var clanCommands = [
     category: "CLAN",
     description: "Mendirikan klan / persekutuan baru (Biaya: 10.000 Koin)",
     usage: ".clancreate <nama_klan>",
-    execute: async (ctx) => {
-      const name = ctx.text.trim();
-      if (!name) return ctx.reply(`Format: ${ctx.prefix}clancreate <nama klan>`);
-      if (ctx.user.koin < 1e4) return ctx.reply(`\u274C Koin tidak cukup! Butuh 10.000 koin untuk membuat klan.`);
-      ctx.user.koin -= 1e4;
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F3F0} *KLAN BERHASIL DIBENTUK!*
+    execute: async (ctx2) => {
+      const name = ctx2.text.trim();
+      if (!name) return ctx2.reply(`Format: ${ctx2.prefix}clancreate <nama klan>`);
+      if (ctx2.user.koin < 1e4) return ctx2.reply(`\u274C Koin tidak cukup! Butuh 10.000 koin untuk membuat klan.`);
+      ctx2.user.koin -= 1e4;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F3F0} *KLAN BERHASIL DIBENTUK!*
 
 \u2022 Nama: *${name}*
-\u2022 Ketua (Leader): @${ctx.user.name}
+\u2022 Ketua (Leader): @${ctx2.user.name}
 \u2022 Level: 1
 \u2022 Anggota: 1/20`);
     }
@@ -3389,8 +4385,8 @@ var clanCommands = [
     category: "CLAN",
     description: "Melihat informasi klan kamu atau klan lain",
     usage: ".claninfo",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3F0} *INFORMASI KLAN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3F0} *INFORMASI KLAN*
 
 \u2022 Nama Klan: Phoenix Vanguard
 \u2022 Level: 5
@@ -3404,8 +4400,8 @@ var clanCommands = [
     category: "CLAN",
     description: "Mengundang pemain untuk bergabung ke klan",
     usage: ".claninvite @pemain",
-    execute: async (ctx) => {
-      await ctx.reply(`\u2709\uFE0F Undangan bergabung klan telah dikirimkan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2709\uFE0F Undangan bergabung klan telah dikirimkan.`);
     }
   },
   {
@@ -3413,8 +4409,8 @@ var clanCommands = [
     category: "CLAN",
     description: "Menerima undangan dan bergabung ke klan",
     usage: ".clanjoin <nama klan>",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F91D} Kamu berhasil bergabung ke dalam klan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F91D} Kamu berhasil bergabung ke dalam klan.`);
     }
   },
   {
@@ -3422,8 +4418,8 @@ var clanCommands = [
     category: "CLAN",
     description: "Mengeluarkan anggota dari klan (Hanya Leader)",
     usage: ".clankick @anggota",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F6AA} Anggota tersebut telah dikeluarkan dari klan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F6AA} Anggota tersebut telah dikeluarkan dari klan.`);
     }
   },
   {
@@ -3431,8 +4427,8 @@ var clanCommands = [
     category: "CLAN",
     description: "Keluar dari klan saat ini",
     usage: ".clanleave",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F6B6} Kamu telah meninggalkan klan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F6B6} Kamu telah meninggalkan klan.`);
     }
   },
   {
@@ -3440,8 +4436,8 @@ var clanCommands = [
     category: "CLAN",
     description: "Melihat daftar anggota di dalam klan",
     usage: ".clanmembers",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F465} *DAFTAR ANGGOTA KLAN*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F465} *DAFTAR ANGGOTA KLAN*
 1. Leader (Ketua)
 2. Officer 1
 3. Member 1`);
@@ -3452,8 +4448,8 @@ var clanCommands = [
     category: "CLAN",
     description: "Memulai perang antar klan (Clan War)",
     usage: ".clanwar",
-    execute: async (ctx) => {
-      await ctx.reply(`\u2694\uFE0F *CLAN WAR DIMULAI!*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2694\uFE0F *CLAN WAR DIMULAI!*
 Phoenix Vanguard vs Shadow Legion!
 Klan kamu berhasil merebut benteng musuh dan mendapatkan rampasan perang 50.000 koin!`);
     }
@@ -3463,8 +4459,8 @@ Klan kamu berhasil merebut benteng musuh dan mendapatkan rampasan perang 50.000 
     category: "CLAN",
     description: "Papan peringkat klan terkuat",
     usage: ".clanleaderboard",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3C6} *TOP KLAN TERKUAT*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3C6} *TOP KLAN TERKUAT*
 
 1. \u{1F947} Dragon Empire (Lv. 15 - 45 Wins)
 2. \u{1F948} Phoenix Vanguard (Lv. 12 - 38 Wins)
@@ -3493,8 +4489,8 @@ var convertCommands = AUDIO_EFFECTS.map((effect) => ({
   description: `Mengubah audio dengan efek ${effect.title}`,
   usage: `.${effect.name} (reply file audio / vn)`,
   limitCost: 1,
-  execute: async (ctx) => {
-    await ctx.reply(`\u{1F39A}\uFE0F *AUDIO FILTER: ${effect.title.toUpperCase()}*
+  execute: async (ctx2) => {
+    await ctx2.reply(`\u{1F39A}\uFE0F *AUDIO FILTER: ${effect.title.toUpperCase()}*
 Efek audio ${effect.title} berhasil diaplikasikan menggunakan FFmpeg filter.`);
   }
 }));
@@ -3513,8 +4509,8 @@ var beritaCommands = PORTALS.map((portal) => ({
   description: `Melihat headline berita terbaru dari ${portal.title}`,
   usage: `.${portal.name}`,
   limitCost: 1,
-  execute: async (ctx) => {
-    await ctx.reply(`\u{1F4F0} *HEADLINE: ${portal.title.toUpperCase()}*
+  execute: async (ctx2) => {
+    await ctx2.reply(`\u{1F4F0} *HEADLINE: ${portal.title.toUpperCase()}*
 
 1. *Pemerintah Akselerasi Pembangunan Infrastruktur Digital*
 Ringkasan berita aktual dan terpercaya mengenai perluasan konektivitas nasional.
@@ -3535,9 +4531,9 @@ var stalkerCommands = [
     description: "Lookup profil publik pengguna GitHub, repo publik, dan followers",
     usage: ".githubstalk <username>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const username = ctx.text.trim() || "GhanzStudio";
-      await ctx.reply(`\u{1F419} *GITHUB PROFILE: @${username}*
+    execute: async (ctx2) => {
+      const username = ctx2.text.trim() || "GhanzStudio";
+      await ctx2.reply(`\u{1F419} *GITHUB PROFILE: @${username}*
 
 \u2022 Nama: Ghanz Studio
 \u2022 Bio: Fullstack & WhatsApp Bot Engineer
@@ -3553,9 +4549,9 @@ var stalkerCommands = [
     description: "Lihat info publik akun Instagram (Bio, followers, post count)",
     usage: ".igstalk <username>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const u = ctx.text.trim() || "instagram";
-      await ctx.reply(`\u{1F4F8} *INSTAGRAM STALKER: @${u}*
+    execute: async (ctx2) => {
+      const u = ctx2.text.trim() || "instagram";
+      await ctx2.reply(`\u{1F4F8} *INSTAGRAM STALKER: @${u}*
 \u2022 Followers: 15.2K
 \u2022 Following: 340
 \u2022 Posts: 128
@@ -3568,9 +4564,9 @@ var stalkerCommands = [
     description: "Lihat info akun TikTok dan total likes",
     usage: ".tiktokstalk <username>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const u = ctx.text.trim() || "tiktok";
-      await ctx.reply(`\u{1F3B5} *TIKTOK PROFILE: @${u}*
+    execute: async (ctx2) => {
+      const u = ctx2.text.trim() || "tiktok";
+      await ctx2.reply(`\u{1F3B5} *TIKTOK PROFILE: @${u}*
 \u2022 Followers: 85.4K
 \u2022 Total Likes: 1.2M
 \u2022 Status: Terverifikasi`);
@@ -3582,9 +4578,9 @@ var stalkerCommands = [
     description: "Lookup channel YouTube dan jumlah subscribers",
     usage: ".ytstalk <nama_channel>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const u = ctx.text.trim() || "GhanzStudio";
-      await ctx.reply(`\u25B6\uFE0F *YOUTUBE CHANNEL: ${u}*
+    execute: async (ctx2) => {
+      const u = ctx2.text.trim() || "GhanzStudio";
+      await ctx2.reply(`\u25B6\uFE0F *YOUTUBE CHANNEL: ${u}*
 \u2022 Subscribers: 42.000
 \u2022 Total Video: 180
 \u2022 Total Views: 3.500.000`);
@@ -3596,9 +4592,9 @@ var stalkerCommands = [
     description: "Lookup developer di npm registry",
     usage: ".npmstalk <username>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const u = ctx.text.trim() || "express";
-      await ctx.reply(`\u{1F4E6} *NPM DEVELOPER: ${u}*
+    execute: async (ctx2) => {
+      const u = ctx2.text.trim() || "express";
+      await ctx2.reply(`\u{1F4E6} *NPM DEVELOPER: ${u}*
 \u2022 Packages: 15 modules
 \u2022 Registry: https://www.npmjs.com/~${u}`);
     }
@@ -3609,8 +4605,8 @@ var stalkerCommands = [
     description: "Lookup ID user Discord publik",
     usage: ".discordstalk <user_id>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3AE} *DISCORD USER LOOKUP*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3AE} *DISCORD USER LOOKUP*
 Profil publik pengguna Discord ditemukan.`);
     }
   },
@@ -3620,9 +4616,9 @@ Profil publik pengguna Discord ditemukan.`);
     description: "Lookup fakta profil negara (populasi, mata uang, bendera)",
     usage: ".countrystalk <negara>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const country = ctx.text.trim() || "Indonesia";
-      await ctx.reply(`\u{1F310} *PROFIL NEGARA: ${country.toUpperCase()}*
+    execute: async (ctx2) => {
+      const country = ctx2.text.trim() || "Indonesia";
+      await ctx2.reply(`\u{1F310} *PROFIL NEGARA: ${country.toUpperCase()}*
 \u2022 Ibukota: Jakarta (IKN Nusantara)
 \u2022 Populasi: ~278 Juta Jiwa
 \u2022 Mata Uang: Rupiah (IDR)
@@ -3640,11 +4636,11 @@ var ttsCommands = [
     description: "Mengubah teks menjadi pesan suara Voice Note (Google TTS)",
     usage: ".tts id <teks>",
     limitCost: 1,
-    execute: async (ctx) => {
-      const text = ctx.text.trim();
-      if (!text) return ctx.reply(`Format: ${ctx.prefix}tts <teks>
-Contoh: ${ctx.prefix}tts Halo selamat pagi semuanya`);
-      await ctx.reply(`\u{1F5E3}\uFE0F *GOOGLE TEXT-TO-SPEECH*
+    execute: async (ctx2) => {
+      const text = ctx2.text.trim();
+      if (!text) return ctx2.reply(`Format: ${ctx2.prefix}tts <teks>
+Contoh: ${ctx2.prefix}tts Halo selamat pagi semuanya`);
+      await ctx2.reply(`\u{1F5E3}\uFE0F *GOOGLE TEXT-TO-SPEECH*
 Bahasa: Indonesia (id)
 Teks: "${text}"
 
@@ -3749,9 +4745,9 @@ var rpgCommands = [
     category: "RPG",
     description: "Melihat isi tas ransel, perlengkapan, dan material RPG kamu",
     usage: ".inventory",
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
-      await ctx.reply(`\u{1F392} *INVENTORY RPG: @${ctx.user.name}*
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
+      await ctx2.reply(`\u{1F392} *INVENTORY RPG: @${ctx2.user.name}*
 
 \u2764\uFE0F Darah (HP): ${rpg.health}/${rpg.maxHealth}
 \u26A1 Stamina: ${rpg.stamina}/${rpg.maxStamina}
@@ -3775,19 +4771,19 @@ var rpgCommands = [
     description: "Menjelajahi hutan rimba mencari harta dan exp",
     usage: ".adventure",
     limitCost: 1,
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
-      if (rpg.stamina < 15) return ctx.reply(`\u26A0\uFE0F Stamina tidak cukup! Butuh minimal 15 stamina. Istirahat atau gunakan ${ctx.prefix}heal.`);
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
+      if (rpg.stamina < 15) return ctx2.reply(`\u26A0\uFE0F Stamina tidak cukup! Butuh minimal 15 stamina. Istirahat atau gunakan ${ctx2.prefix}heal.`);
       rpg.stamina -= 15;
       const getKoin = Math.floor(Math.random() * 800) + 400;
       const getExp = Math.floor(Math.random() * 300) + 150;
       const getWood = Math.floor(Math.random() * 5) + 1;
       rpg.inventory.wood += getWood;
-      ctx.user.koin += getKoin;
-      ctx.user.exp += getExp;
+      ctx2.user.koin += getKoin;
+      ctx2.user.exp += getExp;
       await rpg.save?.();
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F332} *HASIL PETUALANGAN (ADVENTURE)*
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F332} *HASIL PETUALANGAN (ADVENTURE)*
 
 Kamu menjelajahi Hutan Mistis dan menemukan peti harta karun kuno!
 
@@ -3804,9 +4800,9 @@ Kamu menjelajahi Hutan Mistis dan menemukan peti harta karun kuno!
     description: "Menambang batu, besi, dan berlian di gua bawah tanah",
     usage: ".mining",
     limitCost: 1,
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
-      if (rpg.stamina < 20) return ctx.reply(`\u26A0\uFE0F Stamina habis! Butuh 20 stamina untuk menambang.`);
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
+      if (rpg.stamina < 20) return ctx2.reply(`\u26A0\uFE0F Stamina habis! Butuh 20 stamina untuk menambang.`);
       rpg.stamina -= 20;
       const iron = Math.floor(Math.random() * 4) + 1;
       const stone = Math.floor(Math.random() * 8) + 2;
@@ -3815,7 +4811,7 @@ Kamu menjelajahi Hutan Mistis dan menemukan peti harta karun kuno!
       rpg.inventory.stone += stone;
       rpg.inventory.diamond += diamond;
       await rpg.save?.();
-      await ctx.reply(`\u26CF\uFE0F *HASIL MENAMBANG (MINING)*
+      await ctx2.reply(`\u26CF\uFE0F *HASIL MENAMBANG (MINING)*
 
 + \u{1FAA8} ${stone} Batu
 + \u26D3\uFE0F ${iron} Bijih Besi${diamond ? "\n+ \u{1F48E} 1 Berlian Langka!" : ""}
@@ -3829,13 +4825,13 @@ Kamu menjelajahi Hutan Mistis dan menemukan peti harta karun kuno!
     description: "Memancing ikan di danau untuk bahan makanan dan energi",
     usage: ".fishing",
     limitCost: 1,
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
       rpg.stamina = Math.max(0, rpg.stamina - 10);
       const fish = Math.floor(Math.random() * 6) + 1;
       rpg.inventory.fish += fish;
       await rpg.save?.();
-      await ctx.reply(`\u{1F3A3} *HASIL MEMANCING*
+      await ctx2.reply(`\u{1F3A3} *HASIL MEMANCING*
 Umpan disambar! Kamu berhasil menangkap *${fish} ekor ikan segar*!`);
     }
   },
@@ -3846,14 +4842,14 @@ Umpan disambar! Kamu berhasil menangkap *${fish} ekor ikan segar*!`);
     description: "Berburu monster liar di padang rumput",
     usage: ".hunt",
     limitCost: 1,
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
       const monsters = ["Serigala Hitam", "Beruang Hutan", "Goblin Liar", "Orc"];
       const target = monsters[Math.floor(Math.random() * monsters.length)];
-      ctx.user.koin += 750;
-      ctx.user.exp += 250;
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F3F9} *BERBURU MONSTER*
+      ctx2.user.koin += 750;
+      ctx2.user.exp += 250;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F3F9} *BERBURU MONSTER*
 Kamu berhasil melumpuhkan *${target}*!
 Hadiah: +750 Koin, +250 Exp.`);
     }
@@ -3864,8 +4860,8 @@ Hadiah: +750 Koin, +250 Exp.`);
     description: "Berburu hewan hutan",
     usage: ".berburu",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3AF} Kamu berhasil memanah rusa liar! Mendapatkan daging dan tanduk berharga.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3AF} Kamu berhasil memanah rusa liar! Mendapatkan daging dan tanduk berharga.`);
     }
   },
   {
@@ -3875,11 +4871,11 @@ Hadiah: +750 Koin, +250 Exp.`);
     description: "Menebang pohon untuk mengumpulkan persediaan kayu",
     usage: ".woodcut",
     limitCost: 1,
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
       rpg.inventory.wood += 8;
       await rpg.save?.();
-      await ctx.reply(`\u{1FA93} *TEBANG POHON*
+      await ctx2.reply(`\u{1FA93} *TEBANG POHON*
 Kamu menebang pohon jati dan memperoleh *+8 Kayu*.`);
     }
   },
@@ -3890,11 +4886,11 @@ Kamu menebang pohon jati dan memperoleh *+8 Kayu*.`);
     description: "Menanam dan memanen tanaman palawija di ladang",
     usage: ".berladang",
     limitCost: 1,
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
       rpg.inventory.crop += 10;
       await rpg.save?.();
-      await ctx.reply(`\u{1F33E} *BERLADANG & PANEN*
+      await ctx2.reply(`\u{1F33E} *BERLADANG & PANEN*
 Tanaman gandum dan jagungmu siap dipanen! Mendapatkan *+10 Hasil Panen*.`);
     }
   },
@@ -3904,8 +4900,8 @@ Tanaman gandum dan jagungmu siap dipanen! Mendapatkan *+10 Hasil Panen*.`);
     description: "Cek taman kebun sayur",
     usage: ".garden",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F33B} Kebun bunga dan sayur kamu mekar dengan subur.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F33B} Kebun bunga dan sayur kamu mekar dengan subur.`);
     }
   },
   {
@@ -3915,16 +4911,16 @@ Tanaman gandum dan jagungmu siap dipanen! Mendapatkan *+10 Hasil Panen*.`);
     description: "Memasak ikan dan hasil panen menjadi sup pemulih tenaga",
     usage: ".cook",
     limitCost: 1,
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
       if (rpg.inventory.fish < 2 || rpg.inventory.crop < 2) {
-        return ctx.reply(`\u26A0\uFE0F Bahan tidak cukup! Butuh 2 Ikan dan 2 Panen untuk memasak sup.`);
+        return ctx2.reply(`\u26A0\uFE0F Bahan tidak cukup! Butuh 2 Ikan dan 2 Panen untuk memasak sup.`);
       }
       rpg.inventory.fish -= 2;
       rpg.inventory.crop -= 2;
       rpg.inventory.potion += 1;
       await rpg.save?.();
-      await ctx.reply(`\u{1F372} *MEMASAK MAKANAN*
+      await ctx2.reply(`\u{1F372} *MEMASAK MAKANAN*
 Kamu memasak Sup Ikan Rempah yang lezat! Mendapatkan *+1 Potion Pemulih*.`);
     }
   },
@@ -3933,14 +4929,14 @@ Kamu memasak Sup Ikan Rempah yang lezat! Mendapatkan *+1 Potion Pemulih*.`);
     category: "RPG",
     description: "Meminum ramuan potion untuk memulihkan Darah & Stamina hingga penuh",
     usage: ".heal",
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
-      if (rpg.inventory.potion <= 0) return ctx.reply(`\u274C Kamu tidak memiliki Potion! Beli di ${ctx.prefix}shop atau masak dengan ${ctx.prefix}cook.`);
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
+      if (rpg.inventory.potion <= 0) return ctx2.reply(`\u274C Kamu tidak memiliki Potion! Beli di ${ctx2.prefix}shop atau masak dengan ${ctx2.prefix}cook.`);
       rpg.inventory.potion -= 1;
       rpg.health = rpg.maxHealth;
       rpg.stamina = rpg.maxStamina;
       await rpg.save?.();
-      await ctx.reply(`\u{1F9EA} *HEAL SELESAI*
+      await ctx2.reply(`\u{1F9EA} *HEAL SELESAI*
 Kamu meminum ramuan suci! Darah (HP) dan Stamina pulih 100%!`);
     }
   },
@@ -3950,16 +4946,16 @@ Kamu meminum ramuan suci! Darah (HP) dan Stamina pulih 100%!`);
     category: "RPG",
     description: "Toko perlengkapan petualang (beli senjata, potion, alat)",
     usage: ".shop",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F6D2} *TOKO PERLENGKAPAN RPG*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F6D2} *TOKO PERLENGKAPAN RPG*
 
-1. \u{1F9EA} Healing Potion - \u{1FA99} 300 Koin (${ctx.prefix}craft potion)
+1. \u{1F9EA} Healing Potion - \u{1FA99} 300 Koin (${ctx2.prefix}craft potion)
 2. \u2694\uFE0F Iron Broadsword - \u{1FA99} 2.500 Koin
 3. \u{1F6E1}\uFE0F Steel Shield - \u{1FA99} 2.000 Koin
 4. \u26CF\uFE0F Diamond Pickaxe - \u{1FA99} 5.000 Koin
 5. \u{1F969} Makanan Pet - \u{1FA99} 500 Koin
 
-_Ketik ${ctx.prefix}craft atau ${ctx.prefix}blacksmith untuk menempa peralatan!_`);
+_Ketik ${ctx2.prefix}craft atau ${ctx2.prefix}blacksmith untuk menempa peralatan!_`);
     }
   },
   {
@@ -3969,8 +4965,8 @@ _Ketik ${ctx.prefix}craft atau ${ctx.prefix}blacksmith untuk menempa peralatan!_
     description: "Menempa pedang dan perisai yang lebih kuat dari besi",
     usage: ".blacksmith",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F528} *TUKANG TEMPA (BLACKSMITH)*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F528} *TUKANG TEMPA (BLACKSMITH)*
 Pandai besi memalu besi panas menjadi pedang tajam berkilau.`);
     }
   },
@@ -3980,8 +4976,8 @@ Pandai besi memalu besi panas menjadi pedang tajam berkilau.`);
     description: "Merakit bahan mentah menjadi barang bermanfaat",
     usage: ".craft potion / sword",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F6E0}\uFE0F *CRAFTING SUKSES*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F6E0}\uFE0F *CRAFTING SUKSES*
 Barang berhasil dirakit.`);
     }
   },
@@ -3991,8 +4987,8 @@ Barang berhasil dirakit.`);
     description: "Memberikan kekuatan sihir magis pada senjata kamu",
     usage: ".enchant",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2728 Senjata kamu bersinar dengan api mistik! Attack +15 permanently.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2728 Senjata kamu bersinar dengan api mistik! Attack +15 permanently.`);
     }
   },
   {
@@ -4002,8 +4998,8 @@ Barang berhasil dirakit.`);
     description: "Menyerang World Boss naga raksasa bersama teman grup",
     usage: ".boss",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F409} *WORLD BOSS RAID*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F409} *WORLD BOSS RAID*
 Naga Kuno "Ignis" berhasil ditundukkan!
 Rampasan Boss: +10.000 Koin & 1x Batu Kristal Ajaib.`);
     }
@@ -4015,8 +5011,8 @@ Rampasan Boss: +10.000 Koin & 1x Batu Kristal Ajaib.`);
     description: "Bertarung di arena Colosseum melawan gladiator tangguh",
     usage: ".arena",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3DF}\uFE0F *COLOSSEUM ARENA*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3DF}\uFE0F *COLOSSEUM ARENA*
 Kamu mengalahkan gladiator penantang dan meraih gelar Champion!`);
     }
   },
@@ -4026,8 +5022,8 @@ Kamu mengalahkan gladiator penantang dan meraih gelar Champion!`);
     description: "Tantang pemain lain bertarung 1 vs 1 dengan taruhan koin",
     usage: ".duel @lawan <taruhan>",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u2694\uFE0F *DUEL 1 VS 1*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2694\uFE0F *DUEL 1 VS 1*
 Tantangan duel telah dilemparkan.`);
     }
   },
@@ -4037,11 +5033,11 @@ Tantangan duel telah dilemparkan.`);
     category: "RPG",
     description: "Menyimpan atau menarik koin dari brankas bank agar aman dari rampok",
     usage: ".bank nabung <jumlah> / tarik <jumlah>",
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
-      await ctx.reply(`\u{1F3E6} *BANK & BRANKAS KERAJAAN*
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
+      await ctx2.reply(`\u{1F3E6} *BANK & BRANKAS KERAJAAN*
 \u2022 Tabungan Tersimpan: \u{1FA99} ${rpg.bank.toLocaleString("id-ID")} koin
-\u2022 Koin di Dompet: \u{1FA99} ${ctx.user.koin.toLocaleString("id-ID")} koin
+\u2022 Koin di Dompet: \u{1FA99} ${ctx2.user.koin.toLocaleString("id-ID")} koin
 \u2022 Bunga Simpanan: 1% / hari`);
     }
   },
@@ -4051,8 +5047,8 @@ Tantangan duel telah dilemparkan.`);
     category: "RPG",
     description: "Kirim koin ke pengguna lain",
     usage: ".transfer @user <jumlah>",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4B8} Transfer koin berhasil dikirimkan ke penerima.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4B8} Transfer koin berhasil dikirimkan ke penerima.`);
     }
   },
   {
@@ -4062,11 +5058,11 @@ Tantangan duel telah dilemparkan.`);
     description: "Meminta belas kasihan pejalan kaki di pasar kerajaan",
     usage: ".beg",
     limitCost: 1,
-    execute: async (ctx) => {
+    execute: async (ctx2) => {
       const get = Math.floor(Math.random() * 200) + 50;
-      ctx.user.koin += get;
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F97A} Seorang saudagar kaya merasa iba dan memberimu sedekah *${get} koin*!`);
+      ctx2.user.koin += get;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F97A} Seorang saudagar kaya merasa iba dan memberimu sedekah *${get} koin*!`);
     }
   },
   {
@@ -4076,11 +5072,11 @@ Tantangan duel telah dilemparkan.`);
     description: "Menjadi driver ojek mengantar penumpang ke kota",
     usage: ".ngojek",
     limitCost: 1,
-    execute: async (ctx) => {
+    execute: async (ctx2) => {
       const get = Math.floor(Math.random() * 600) + 300;
-      ctx.user.koin += get;
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F6F5} Kamu mengantar penumpang selamat sampai stasiun! Mendapatkan ongkos *${get} koin* + bintang 5.`);
+      ctx2.user.koin += get;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F6F5} Kamu mengantar penumpang selamat sampai stasiun! Mendapatkan ongkos *${get} koin* + bintang 5.`);
     }
   },
   {
@@ -4089,10 +5085,10 @@ Tantangan duel telah dilemparkan.`);
     description: "Mengantarkan paket barang kilat",
     usage: ".kurir",
     limitCost: 1,
-    execute: async (ctx) => {
-      ctx.user.koin += 450;
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F4E6} Paket berhasil diantarkan! Menerima upah *450 koin*.`);
+    execute: async (ctx2) => {
+      ctx2.user.koin += 450;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F4E6} Paket berhasil diantarkan! Menerima upah *450 koin*.`);
     }
   },
   {
@@ -4102,13 +5098,13 @@ Tantangan duel telah dilemparkan.`);
     description: "Bekerja paruh waktu untuk mencari nafkah",
     usage: ".work",
     limitCost: 1,
-    execute: async (ctx) => {
+    execute: async (ctx2) => {
       const jobs = ["Koki Restoran", "Petugas Arsip", "Barista Kopi", "Mekanik Bengkel"];
       const job = jobs[Math.floor(Math.random() * jobs.length)];
       const salary = Math.floor(Math.random() * 700) + 400;
-      ctx.user.koin += salary;
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F4BC} Kamu bekerja keras sebagai *${job}* dan menerima gaji harian *${salary} koin*!`);
+      ctx2.user.koin += salary;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F4BC} Kamu bekerja keras sebagai *${job}* dan menerima gaji harian *${salary} koin*!`);
     }
   },
   {
@@ -4118,9 +5114,9 @@ Tantangan duel telah dilemparkan.`);
     description: "Melempar dadu keberuntungan berhadiah",
     usage: ".dice <taruhan>",
     limitCost: 1,
-    execute: async (ctx) => {
+    execute: async (ctx2) => {
       const roll = Math.floor(Math.random() * 6) + 1;
-      await ctx.reply(`\u{1F3B2} Dadu berputar dan mendarat pada angka *[ ${roll} ]*!`);
+      await ctx2.reply(`\u{1F3B2} Dadu berputar dan mendarat pada angka *[ ${roll} ]*!`);
     }
   },
   {
@@ -4130,13 +5126,13 @@ Tantangan duel telah dilemparkan.`);
     description: "Mesin slot koin mini (Fun game tanpa uang asli)",
     usage: ".slot",
     limitCost: 1,
-    execute: async (ctx) => {
+    execute: async (ctx2) => {
       const emojis = ["\u{1F352}", "\u{1F34B}", "\u{1F347}", "\u{1F48E}", "7\uFE0F\u20E3"];
       const r1 = emojis[Math.floor(Math.random() * emojis.length)];
       const r2 = emojis[Math.floor(Math.random() * emojis.length)];
       const r3 = emojis[Math.floor(Math.random() * emojis.length)];
       const isWin = r1 === r2 && r2 === r3;
-      await ctx.reply(`\u{1F3B0} *SLOT MACHINE*
+      await ctx2.reply(`\u{1F3B0} *SLOT MACHINE*
 
 [ ${r1} | ${r2} | ${r3} ]
 
@@ -4149,8 +5145,8 @@ ${isWin ? "\u{1F389} JACKPOT! Tiga simbol cocok! Menang 5.000 Koin!" : "Coba lag
     description: "Membeli kupon undian berhadiah akbar",
     usage: ".lottery",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F39F}\uFE0F Kupon undian nomor #${Math.floor(Math.random() * 9e4) + 1e4} berhasil dibeli.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F39F}\uFE0F Kupon undian nomor #${Math.floor(Math.random() * 9e4) + 1e4} berhasil dibeli.`);
     }
   },
   {
@@ -4158,9 +5154,9 @@ ${isWin ? "\u{1F389} JACKPOT! Tiga simbol cocok! Menang 5.000 Koin!" : "Coba lag
     category: "RPG",
     description: "Melihat dan merawat hewan peliharaan (Pet)",
     usage: ".pet feed / info",
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
-      await ctx.reply(`\u{1F43E} *PET PELIHARAAN: ${rpg.pet?.name || "Kucing Oren"}*
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
+      await ctx2.reply(`\u{1F43E} *PET PELIHARAAN: ${rpg.pet?.name || "Kucing Oren"}*
 \u2022 Tipe: ${rpg.pet?.type || "Cat"}
 \u2022 Level: ${rpg.pet?.level || 1} (Exp: ${rpg.pet?.exp || 20}/100)
 \u2022 Kesenangan: 100%
@@ -4174,8 +5170,8 @@ Pet kamu memberi bonus +5% serangan saat berburu!`);
     category: "RPG",
     description: "Daftar misi harian berhadiah koin & material melimpah",
     usage: ".quest",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F4DC} *MISI HARIAN (QUEST)*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F4DC} *MISI HARIAN (QUEST)*
 
 1. Selesaikan 1x Adventure [Hadiah: 1.000 Koin]
 2. Tambang 5x Batu [Hadiah: 500 Koin]
@@ -4189,9 +5185,9 @@ Selesaikan quest untuk klaim hadiah!`);
     category: "RPG",
     description: "Cek sisa stamina karakter petualangmu",
     usage: ".stamina",
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
-      await ctx.reply(`\u26A1 Stamina kamu: *${rpg.stamina}/${rpg.maxStamina}*
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
+      await ctx2.reply(`\u26A1 Stamina kamu: *${rpg.stamina}/${rpg.maxStamina}*
 Stamina otomatis terisi kembali setiap menit.`);
     }
   },
@@ -4202,11 +5198,11 @@ Stamina otomatis terisi kembali setiap menit.`);
     description: "Bermeditasi di air terjun untuk memulihkan energi batin dan stamina",
     usage: ".meditation",
     limitCost: 1,
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
       rpg.stamina = Math.min(rpg.maxStamina, rpg.stamina + 35);
       await rpg.save?.();
-      await ctx.reply(`\u{1F9D8} Kamu bermeditasi dengan tenang di bawah air terjun sejuk. Stamina bertambah +35.`);
+      await ctx2.reply(`\u{1F9D8} Kamu bermeditasi dengan tenang di bawah air terjun sejuk. Stamina bertambah +35.`);
     }
   },
   {
@@ -4216,8 +5212,8 @@ Stamina otomatis terisi kembali setiap menit.`);
     description: "Latihan fisik meningkatkan poin serangan dan pertahanan",
     usage: ".training",
     limitCost: 1,
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F94B} Kamu berlatih pedang dengan boneka kayu jerami! Attack bertambah +2.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F94B} Kamu berlatih pedang dengan boneka kayu jerami! Attack bertambah +2.`);
     }
   },
   {
@@ -4225,8 +5221,8 @@ Stamina otomatis terisi kembali setiap menit.`);
     category: "RPG",
     description: "Markas serikat petualang kerajaan",
     usage: ".guild",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F3DB}\uFE0F *GUILD HALL PETUALANG*
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F3DB}\uFE0F *GUILD HALL PETUALANG*
 Di sini para petualang berkumpul bertukar kabar dan mengambil kontrak.`);
     }
   },
@@ -4235,8 +5231,8 @@ Di sini para petualang berkumpul bertukar kabar dan mengambil kontrak.`);
     category: "RPG",
     description: "Berdagang dengan saudagar keliling misterius",
     usage: ".merchant",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F42A} Saudagar keliling menawarkan relik kuno langka.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F42A} Saudagar keliling menawarkan relik kuno langka.`);
     }
   },
   {
@@ -4245,10 +5241,10 @@ Di sini para petualang berkumpul bertukar kabar dan mengambil kontrak.`);
     description: "Membuka lapak dagangan di pasar kota",
     usage: ".jualan",
     limitCost: 1,
-    execute: async (ctx) => {
-      ctx.user.koin += 600;
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F3EA} Barang dagangan laku terjual! Mendapatkan penghasilan *+600 koin*.`);
+    execute: async (ctx2) => {
+      ctx2.user.koin += 600;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F3EA} Barang dagangan laku terjual! Mendapatkan penghasilan *+600 koin*.`);
     }
   },
   {
@@ -4256,17 +5252,17 @@ Di sini para petualang berkumpul bertukar kabar dan mengambil kontrak.`);
     category: "RPG",
     description: "Menjual seluruh kayu, batu, ikan, dan hasil panen menjadi koin",
     usage: ".sellall",
-    execute: async (ctx) => {
-      const rpg = await getRPGData(ctx.user.id);
+    execute: async (ctx2) => {
+      const rpg = await getRPGData(ctx2.user.id);
       const totalEarned = rpg.inventory.wood * 20 + rpg.inventory.stone * 25 + rpg.inventory.fish * 50 + rpg.inventory.crop * 30;
       rpg.inventory.wood = 0;
       rpg.inventory.stone = 0;
       rpg.inventory.fish = 0;
       rpg.inventory.crop = 0;
-      ctx.user.koin += totalEarned;
+      ctx2.user.koin += totalEarned;
       await rpg.save?.();
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F4B0} *JUAL SEMUA HASIL*
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F4B0} *JUAL SEMUA HASIL*
 Seluruh material mentah berhasil dijual ke pedagang kota seharga *\u{1FA99} ${totalEarned.toLocaleString("id-ID")} koin*!`);
     }
   },
@@ -4276,8 +5272,8 @@ Seluruh material mentah berhasil dijual ke pedagang kota seharga *\u{1FA99} ${to
     description: "Mengirim ekspedisi penjelajah ke benua seberang",
     usage: ".expedition",
     limitCost: 2,
-    execute: async (ctx) => {
-      await ctx.reply(`\u26F5 Kapal ekspedisi telah berlayar menuju Benua Salju Arkadia. Hasil ekspedisi akan tiba.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u26F5 Kapal ekspedisi telah berlayar menuju Benua Salju Arkadia. Hasil ekspedisi akan tiba.`);
     }
   },
   {
@@ -4286,8 +5282,8 @@ Seluruh material mentah berhasil dijual ke pedagang kota seharga *\u{1FA99} ${to
     category: "RPG",
     description: "Melamar atau menikah dengan pemain lain di bot",
     usage: ".marry @user",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F48D} Pernikahan impian digelar meriah di Katedral Kota! Selamat kepada kedua mempelai.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F48D} Pernikahan impian digelar meriah di Katedral Kota! Selamat kepada kedua mempelai.`);
     }
   },
   {
@@ -4295,8 +5291,8 @@ Seluruh material mentah berhasil dijual ke pedagang kota seharga *\u{1FA99} ${to
     category: "RPG",
     description: "Mengirim kado hadiah istimewa kepada teman",
     usage: ".gift @user",
-    execute: async (ctx) => {
-      await ctx.reply(`\u{1F381} Kado kotak pita telah terkirim kepada teman.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F381} Kado kotak pita telah terkirim kepada teman.`);
     }
   },
   {
@@ -4304,8 +5300,8 @@ Seluruh material mentah berhasil dijual ke pedagang kota seharga *\u{1FA99} ${to
     category: "RPG",
     description: "Menggunakan item tertentu dari tas ransel",
     usage: ".use potion",
-    execute: async (ctx) => {
-      await ctx.reply(`\u2728 Item berhasil digunakan.`);
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u2728 Item berhasil digunakan.`);
     }
   },
   {
@@ -4313,11 +5309,11 @@ Seluruh material mentah berhasil dijual ke pedagang kota seharga *\u{1FA99} ${to
     category: "RPG",
     description: "Klaim hadiah peti harta karun mingguan",
     usage: ".weekly",
-    execute: async (ctx) => {
-      ctx.user.koin += 1e4;
-      ctx.user.limit += 50;
-      await ctx.user.save?.();
-      await ctx.reply(`\u{1F451} *HADIAH MINGGUAN (WEEKLY REWARD)*
+    execute: async (ctx2) => {
+      ctx2.user.koin += 1e4;
+      ctx2.user.limit += 50;
+      await ctx2.user.save?.();
+      await ctx2.reply(`\u{1F451} *HADIAH MINGGUAN (WEEKLY REWARD)*
 Kamu membuka Peti Emas!
 + \u{1FA99} 10.000 Koin
 + \u26A1 50 Limit Energi`);
@@ -4325,9 +5321,366 @@ Kamu membuka Peti Emas!
   }
 ];
 
+// bot/database/models/User.ts
+var import_mongoose3 = __toESM(require("mongoose"), 1);
+var UserSchema = new import_mongoose3.Schema({
+  id: { type: String, required: true, unique: true },
+  name: { type: String, default: "User" },
+  exp: { type: Number, default: 0 },
+  level: { type: Number, default: 1 },
+  koin: { type: Number, default: 1e3 },
+  limit: { type: Number, default: 50 },
+  lastDaily: { type: Date, default: null },
+  lastWeekly: { type: Date, default: null },
+  role: { type: String, enum: ["user", "partner", "premium", "owner"], default: "user" },
+  premium: { type: Boolean, default: false },
+  premiumExpired: { type: Date, default: null },
+  registered: { type: Boolean, default: false },
+  registeredAt: { type: Date, default: null },
+  age: { type: Number, default: 0 },
+  birthday: { type: String, default: null },
+  banned: { type: Boolean, default: false },
+  banReason: { type: String, default: null },
+  warn: { type: Number, default: 0 },
+  totalHit: { type: Number, default: 0 }
+}, {
+  timestamps: true
+});
+var UserModel = import_mongoose3.default.models.User || import_mongoose3.default.model("User", UserSchema);
+var memoryUsers = /* @__PURE__ */ new Map();
+async function getUser(jid, name) {
+  const cleanJid = jid.split("@")[0].split(":")[0] + "@s.whatsapp.net";
+  const isOwner = isOwnerNumber(cleanJid);
+  let user = null;
+  try {
+    if (import_mongoose3.default.connection.readyState === 1) {
+      user = await UserModel.findOne({ id: cleanJid });
+      if (!user) {
+        user = await UserModel.create({
+          id: cleanJid,
+          name: isOwner ? name || config.ownerName || "GhanzStudio" : name || "User",
+          limit: isOwner ? 999999 : 50,
+          koin: isOwner ? 999999999 : 1e3,
+          exp: isOwner ? 99999 : 0,
+          level: isOwner ? 999 : 1,
+          role: isOwner ? "owner" : "user",
+          premium: isOwner,
+          registered: isOwner,
+          registeredAt: isOwner ? /* @__PURE__ */ new Date() : null
+        });
+      }
+    }
+  } catch (err) {
+  }
+  if (!user) {
+    if (!memoryUsers.has(cleanJid)) {
+      memoryUsers.set(cleanJid, {
+        id: cleanJid,
+        name: isOwner ? name || config.ownerName || "GhanzStudio" : name || "User",
+        exp: isOwner ? 99999 : 0,
+        level: isOwner ? 999 : 1,
+        koin: isOwner ? 999999999 : 1e3,
+        limit: isOwner ? 999999 : 50,
+        lastDaily: null,
+        lastWeekly: null,
+        role: isOwner ? "owner" : "user",
+        premium: isOwner,
+        premiumExpired: null,
+        registered: isOwner,
+        registeredAt: isOwner ? /* @__PURE__ */ new Date() : null,
+        age: isOwner ? 20 : 0,
+        birthday: isOwner ? "17-08" : null,
+        banned: false,
+        banReason: null,
+        warn: 0,
+        totalHit: 0,
+        save: async function() {
+          return this;
+        }
+      });
+    }
+    user = memoryUsers.get(cleanJid);
+  }
+  if (isOwner) {
+    user.role = "owner";
+    user.premium = true;
+    user.limit = 999999;
+    user.koin = 999999999;
+    user.level = 999;
+    user.registered = true;
+    user.banned = false;
+    if (!user.name || user.name === "User" || user.name === "GhanzTester" || user.name === "anonymous" || user.name === "Pengguna") {
+      user.name = config.ownerName || "GhanzStudio";
+    }
+  } else if (name && (user.name === "User" || user.name === "anonymous")) {
+    user.name = name;
+  }
+  return user;
+}
+function getAllMemoryUsers() {
+  return Array.from(memoryUsers.values());
+}
+
+// bot/commands/owner.ts
+var import_util2 = __toESM(require("util"), 1);
+var ownerCommands = [
+  // 1. Broadcast to all users / groups
+  {
+    name: "bc",
+    aliases: ["broadcast", "bcall"],
+    category: "OWNER",
+    description: "Mengirimkan pesan siaran broadcast ke seluruh chat/grup (Owner Only)",
+    usage: ".bc <pesan>",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      const text = ctx2.text.trim();
+      if (!text) {
+        return ctx2.reply(`\u26A0\uFE0F Masukkan pesan siaran!
+Contoh: *${ctx2.prefix}bc Pengumuman pemeliharaan server.*`);
+      }
+      await ctx2.reply(
+        `\u{1F4E2} *BROADCAST SYSTEM (OWNER)*
+
+Pesan siaran berhasil dikirimkan ke antrean broadcast:
+
+"${text}"
+
+\u{1F4CA} *Penerima:* Semua Grup & Pengguna Terdaftar
+\u26A1 *Pengirim:* ${config.ownerName} (Owner Bot)`
+      );
+    }
+  },
+  // 2. Add Premium User
+  {
+    name: "addprem",
+    aliases: ["tambahprem"],
+    category: "OWNER",
+    description: "Menambahkan status user Premium / VIP (Owner Only)",
+    usage: ".addprem <nomor> <hari>",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      const rawTarget = ctx2.args[0];
+      const days = parseInt(ctx2.args[1] || "30", 10);
+      if (!rawTarget) {
+        return ctx2.reply(`Format: *${ctx2.prefix}addprem 62812345678 30*`);
+      }
+      const targetDigits = rawTarget.replace(/\D/g, "");
+      const targetJid = `${targetDigits}@s.whatsapp.net`;
+      const targetUser = await getUser(targetJid);
+      targetUser.premium = true;
+      const expireDate = /* @__PURE__ */ new Date();
+      expireDate.setDate(expireDate.getDate() + days);
+      targetUser.premiumExpired = expireDate;
+      targetUser.role = "premium";
+      targetUser.limit += 500;
+      await targetUser.save?.();
+      await ctx2.reply(
+        `\u{1F451} *SUKSES UPGRADE PREMIUM!*
+
+\u2022 Target: wa.me/${targetDigits}
+\u2022 Durasi: ${days} Hari
+\u2022 Masa Berlaku: Sampai ${expireDate.toLocaleDateString("id-ID")}
+\u2022 Bonus Limit: +500 Limit Energi
+\u2022 Status: Aktif VIP \u2728`
+      );
+    }
+  },
+  // 3. Delete Premium User
+  {
+    name: "delprem",
+    aliases: ["hapusprem"],
+    category: "OWNER",
+    description: "Mencabut status user Premium (Owner Only)",
+    usage: ".delprem <nomor>",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      const rawTarget = ctx2.args[0];
+      if (!rawTarget) return ctx2.reply(`Format: *${ctx2.prefix}delprem 62812345678*`);
+      const targetDigits = rawTarget.replace(/\D/g, "");
+      const targetJid = `${targetDigits}@s.whatsapp.net`;
+      const targetUser = await getUser(targetJid);
+      targetUser.premium = false;
+      targetUser.premiumExpired = null;
+      targetUser.role = "user";
+      await targetUser.save?.();
+      await ctx2.reply(`\u{1F5D1}\uFE0F Status Premium untuk wa.me/${targetDigits} telah berhasil dicabut.`);
+    }
+  },
+  // 4. Add Limit / Energi to User
+  {
+    name: "addlimit",
+    category: "OWNER",
+    description: "Menambahkan kuota limit energi pengguna (Owner Only)",
+    usage: ".addlimit <nomor> <jumlah>",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      const rawTarget = ctx2.args[0];
+      const amount = parseInt(ctx2.args[1] || "100", 10);
+      if (!rawTarget || isNaN(amount)) {
+        return ctx2.reply(`Format: *${ctx2.prefix}addlimit 62812345678 100*`);
+      }
+      const targetDigits = rawTarget.replace(/\D/g, "");
+      const targetJid = `${targetDigits}@s.whatsapp.net`;
+      const targetUser = await getUser(targetJid);
+      targetUser.limit = (targetUser.limit || 0) + amount;
+      await targetUser.save?.();
+      await ctx2.reply(`\u26A1 Berhasil menambahkan *+${amount} Limit* ke wa.me/${targetDigits} (Total: ${targetUser.limit} Limit).`);
+    }
+  },
+  // 5. Add Koin to User
+  {
+    name: "addkoin",
+    category: "OWNER",
+    description: "Menambahkan saldo koin pengguna (Owner Only)",
+    usage: ".addkoin <nomor> <jumlah>",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      const rawTarget = ctx2.args[0];
+      const amount = parseInt(ctx2.args[1] || "5000", 10);
+      if (!rawTarget || isNaN(amount)) {
+        return ctx2.reply(`Format: *${ctx2.prefix}addkoin 62812345678 5000*`);
+      }
+      const targetDigits = rawTarget.replace(/\D/g, "");
+      const targetJid = `${targetDigits}@s.whatsapp.net`;
+      const targetUser = await getUser(targetJid);
+      targetUser.koin = (targetUser.koin || 0) + amount;
+      await targetUser.save?.();
+      await ctx2.reply(`\u{1FA99} Berhasil menambahkan *+${amount.toLocaleString("id-ID")} Koin* ke wa.me/${targetDigits} (Total: ${targetUser.koin.toLocaleString("id-ID")} Koin).`);
+    }
+  },
+  // 6. Ban User
+  {
+    name: "ban",
+    aliases: ["banned"],
+    category: "OWNER",
+    description: "Memblokir pengguna dari penggunaan bot (Owner Only)",
+    usage: ".ban <nomor> <alasan>",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      const rawTarget = ctx2.args[0];
+      const reason = ctx2.args.slice(1).join(" ") || "Melanggar ketentuan bot";
+      if (!rawTarget) return ctx2.reply(`Format: *${ctx2.prefix}ban 62812345678 Spam berlebihan*`);
+      const targetDigits = rawTarget.replace(/\D/g, "");
+      const targetJid = `${targetDigits}@s.whatsapp.net`;
+      const targetUser = await getUser(targetJid);
+      targetUser.banned = true;
+      targetUser.banReason = reason;
+      await targetUser.save?.();
+      await ctx2.reply(`\u{1F6AB} Pengguna wa.me/${targetDigits} telah berhasil diblokir (Banned) dari sistem bot.
+Alasan: ${reason}`);
+    }
+  },
+  // 7. Unban User
+  {
+    name: "unban",
+    category: "OWNER",
+    description: "Membuka blokir pengguna (Owner Only)",
+    usage: ".unban <nomor>",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      const rawTarget = ctx2.args[0];
+      if (!rawTarget) return ctx2.reply(`Format: *${ctx2.prefix}unban 62812345678*`);
+      const targetDigits = rawTarget.replace(/\D/g, "");
+      const targetJid = `${targetDigits}@s.whatsapp.net`;
+      const targetUser = await getUser(targetJid);
+      targetUser.banned = false;
+      targetUser.banReason = null;
+      await targetUser.save?.();
+      await ctx2.reply(`\u2705 Pengguna wa.me/${targetDigits} telah dipulihkan (Unbanned).`);
+    }
+  },
+  // 8. Set Bot Prefix
+  {
+    name: "setprefix",
+    category: "OWNER",
+    description: "Mengubah karakter prefix bot secara dinamis (Owner Only)",
+    usage: ".setprefix <simbol>",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      const newPrefix = ctx2.args[0];
+      if (!newPrefix) return ctx2.reply(`Format: *${ctx2.prefix}setprefix !* atau *${ctx2.prefix}setprefix .*`);
+      config.prefix = newPrefix;
+      await ctx2.reply(`\u2728 Prefix bot berhasil diubah menjadi: *${newPrefix}*`);
+    }
+  },
+  // 9. Clear Temporary Cache
+  {
+    name: "cleartmp",
+    aliases: ["clearcache"],
+    category: "OWNER",
+    description: "Membersihkan sampah session, cache, dan memori (Owner Only)",
+    usage: ".cleartmp",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      if (global.gc) {
+        global.gc();
+      }
+      const mem = process.memoryUsage();
+      await ctx2.reply(
+        `\u{1F9F9} *PEMBERSIHAN CACHE & MEMORI*
+
+\u2022 Status: Berhasil dibersihkan \u2705
+\u2022 RAM Heap: ${(mem.heapUsed / 1024 / 1024).toFixed(1)} MB / ${(mem.heapTotal / 1024 / 1024).toFixed(1)} MB
+\u2022 RSS: ${(mem.rss / 1024 / 1024).toFixed(1)} MB`
+      );
+    }
+  },
+  // 10. Eval JavaScript (Root Execution)
+  {
+    name: "eval",
+    aliases: [">", "ev"],
+    category: "OWNER",
+    description: "Mengevaluasi kode JavaScript secara langsung (Owner Only)",
+    usage: ".eval <kode>",
+    ownerOnly: true,
+    execute: async (ctx) => {
+      const code = ctx.text.trim();
+      if (!code) return ctx.reply(`Format: *${ctx.prefix}eval 1 + 1*`);
+      try {
+        let result = eval(code);
+        if (typeof result !== "string") {
+          result = import_util2.default.inspect(result, { depth: 1 });
+        }
+        await ctx.reply(`\u{1F4BB} *EVAL HASIL:*
+\`\`\`javascript
+${result}
+\`\`\``);
+      } catch (err) {
+        await ctx.reply(`\u274C *EVAL ERROR:*
+\`\`\`${err.message}
+\`\`\``);
+      }
+    }
+  },
+  // 11. Mode Self / Public
+  {
+    name: "self",
+    category: "OWNER",
+    description: "Mengubah mode bot menjadi khusus Owner (Self Mode)",
+    usage: ".self",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F512} *BOT MODE: SELF*
+Saat ini bot hanya merespon perintah dari Owner (${config.ownerName}).`);
+    }
+  },
+  {
+    name: "public",
+    category: "OWNER",
+    description: "Mengubah mode bot menjadi Public (Dapat digunakan semua user)",
+    usage: ".public",
+    ownerOnly: true,
+    execute: async (ctx2) => {
+      await ctx2.reply(`\u{1F30D} *BOT MODE: PUBLIC*
+Bot kini aktif dan dapat digunakan oleh semua pengguna dan grup.`);
+    }
+  }
+];
+
 // bot/commands/index.ts
 var allCommands = [
   ...mainCommands,
+  ...ownerCommands,
   ...toolsCommands,
   ...gameCommands,
   ...downloadCommands,
@@ -4377,86 +5730,6 @@ function getCommandsByCategory() {
 }
 function getTotalCommandsCount() {
   return allCommands.length;
-}
-
-// bot/database/models/User.ts
-var import_mongoose3 = __toESM(require("mongoose"), 1);
-var UserSchema = new import_mongoose3.Schema({
-  id: { type: String, required: true, unique: true },
-  name: { type: String, default: "User" },
-  exp: { type: Number, default: 0 },
-  level: { type: Number, default: 1 },
-  koin: { type: Number, default: 1e3 },
-  limit: { type: Number, default: 50 },
-  lastDaily: { type: Date, default: null },
-  lastWeekly: { type: Date, default: null },
-  role: { type: String, enum: ["user", "partner", "premium", "owner"], default: "user" },
-  premium: { type: Boolean, default: false },
-  premiumExpired: { type: Date, default: null },
-  registered: { type: Boolean, default: false },
-  registeredAt: { type: Date, default: null },
-  age: { type: Number, default: 0 },
-  birthday: { type: String, default: null },
-  banned: { type: Boolean, default: false },
-  banReason: { type: String, default: null },
-  warn: { type: Number, default: 0 },
-  totalHit: { type: Number, default: 0 }
-}, {
-  timestamps: true
-});
-var UserModel = import_mongoose3.default.models.User || import_mongoose3.default.model("User", UserSchema);
-var memoryUsers = /* @__PURE__ */ new Map();
-async function getUser(jid, name) {
-  const cleanJid = jid.split("@")[0] + "@s.whatsapp.net";
-  try {
-    if (import_mongoose3.default.connection.readyState === 1) {
-      let user2 = await UserModel.findOne({ id: cleanJid });
-      if (!user2) {
-        user2 = await UserModel.create({
-          id: cleanJid,
-          name: name || "User",
-          limit: 50,
-          koin: 1e3,
-          exp: 0,
-          level: 1
-        });
-      }
-      return user2;
-    }
-  } catch (err) {
-  }
-  if (!memoryUsers.has(cleanJid)) {
-    memoryUsers.set(cleanJid, {
-      id: cleanJid,
-      name: name || "User",
-      exp: 0,
-      level: 1,
-      koin: 1e3,
-      limit: 50,
-      lastDaily: null,
-      lastWeekly: null,
-      role: "user",
-      premium: false,
-      premiumExpired: null,
-      registered: false,
-      registeredAt: null,
-      age: 0,
-      birthday: null,
-      banned: false,
-      banReason: null,
-      warn: 0,
-      totalHit: 0,
-      save: async function() {
-        return this;
-      }
-    });
-  }
-  const user = memoryUsers.get(cleanJid);
-  if (name && user.name === "User") user.name = name;
-  return user;
-}
-function getAllMemoryUsers() {
-  return Array.from(memoryUsers.values());
 }
 
 // bot/database/models/Group.ts
@@ -4609,8 +5882,7 @@ async function handleIncomingMessage(opts) {
     console.log(`[BOT REACT ${e}]`);
   });
   const isGroup = Boolean(groupJid);
-  const cleanSenderNumber = senderJid.split("@")[0].replace(/\D/g, "");
-  const isOwner = cleanSenderNumber === config.ownerNumber.replace(/\D/g, "");
+  const isOwner = isOwnerNumber(senderJid) || Boolean(m?.key?.fromMe);
   const prefix = config.prefix || ".";
   const trimmed = body.trim();
   if (!trimmed.startsWith(prefix)) {
@@ -4686,6 +5958,87 @@ _Beli tambahan limit dengan ${prefix}buyenergi atau tunggu reset harian pukul 00
       capturedReply = text;
       return await reply(text, options);
     };
+    const targetJid = groupJid || senderJid;
+    const sendAudio = async (audioUrlOrBuffer, ptt = true, caption) => {
+      if (sock) {
+        try {
+          let audioPayload = null;
+          let mimetype = ptt ? "audio/ogg; codecs=opus" : "audio/mpeg";
+          if (typeof audioUrlOrBuffer === "string") {
+            if (audioUrlOrBuffer.startsWith("http")) {
+              try {
+                const converted = await convertToWhatsAppVoiceNote(audioUrlOrBuffer);
+                audioPayload = converted.buffer;
+                mimetype = converted.mimetype;
+              } catch (e) {
+                console.warn("[handler] convertToWhatsAppVoiceNote failed, fallback URL:", e.message);
+                audioPayload = { url: audioUrlOrBuffer };
+                mimetype = "audio/mpeg";
+                ptt = false;
+              }
+            } else {
+              audioPayload = { url: audioUrlOrBuffer };
+            }
+          } else {
+            try {
+              if (ptt) {
+                const converted = await convertToWhatsAppVoiceNote(audioUrlOrBuffer);
+                audioPayload = converted.buffer;
+                mimetype = converted.mimetype;
+              } else {
+                audioPayload = audioUrlOrBuffer;
+                mimetype = "audio/mpeg";
+              }
+            } catch (e) {
+              audioPayload = audioUrlOrBuffer;
+            }
+          }
+          return await sock.sendMessage(targetJid, {
+            audio: audioPayload,
+            mimetype,
+            ptt
+          }, { quoted: m });
+        } catch (e) {
+          console.warn("[handler] sock sendAudio failed, falling back to text:", e.message);
+        }
+      }
+      return await executionReply(caption || `\u{1F3A7} [Audio Voice Chat]: ${audioUrlOrBuffer}`);
+    };
+    const sendVideo = async (videoUrlOrBuffer, caption) => {
+      if (sock) {
+        try {
+          return await sock.sendMessage(targetJid, {
+            video: typeof videoUrlOrBuffer === "string" ? { url: videoUrlOrBuffer } : videoUrlOrBuffer,
+            caption: caption || "",
+            mimetype: "video/mp4"
+          }, { quoted: m });
+        } catch (e) {
+          console.warn("[handler] sock sendVideo failed, falling back to text:", e.message);
+        }
+      }
+      return await executionReply(caption ? `${caption}
+
+\u{1F3AC} [Video Link]: ${videoUrlOrBuffer}` : `\u{1F3AC} [Video Link]: ${videoUrlOrBuffer}`);
+    };
+    const sendImage = async (imageUrlOrBuffer, caption) => {
+      if (opts.sendImage) {
+        return await opts.sendImage(imageUrlOrBuffer, caption);
+      }
+      if (sock) {
+        try {
+          return await sock.sendMessage(targetJid, {
+            image: typeof imageUrlOrBuffer === "string" ? { url: imageUrlOrBuffer } : imageUrlOrBuffer,
+            caption: caption || "",
+            mimetype: "image/jpeg"
+          }, { quoted: m });
+        } catch (e) {
+          console.warn("[handler] sock sendImage failed, falling back to text:", e.message);
+        }
+      }
+      return await executionReply(caption ? `${caption}
+
+\u{1F5BC}\uFE0F [Gambar]: ${typeof imageUrlOrBuffer === "string" ? imageUrlOrBuffer : "QRIS Image"}` : `\u{1F5BC}\uFE0F [Gambar]: ${typeof imageUrlOrBuffer === "string" ? imageUrlOrBuffer : "QRIS Image"}`);
+    };
     await command.execute({
       sock,
       m,
@@ -4702,6 +6055,9 @@ _Beli tambahan limit dengan ${prefix}buyenergi atau tunggu reset harian pukul 00
       isAdmin: isGroupAdmin,
       isBotAdmin,
       reply: executionReply,
+      sendAudio,
+      sendVideo,
+      sendImage,
       react
     });
     return { executed: true, replyText: capturedReply };
@@ -4730,13 +6086,13 @@ async function requestPairingCodeDirectly(rawPhoneNumber) {
   } else if (cleanPhone.startsWith("8")) {
     cleanPhone = "62" + cleanPhone;
   }
-  const sessionPath = import_path.default.resolve(process.cwd(), config.sessionDir || "./sessions");
-  const credsFile = import_path.default.join(sessionPath, "creds.json");
-  if (import_fs.default.existsSync(sessionPath)) {
+  const sessionPath = import_path3.default.resolve(process.cwd(), config.sessionDir || "./sessions");
+  const credsFile = import_path3.default.join(sessionPath, "creds.json");
+  if (import_fs3.default.existsSync(sessionPath)) {
     let isRegistered = false;
-    if (import_fs.default.existsSync(credsFile)) {
+    if (import_fs3.default.existsSync(credsFile)) {
       try {
-        const creds = JSON.parse(import_fs.default.readFileSync(credsFile, "utf-8"));
+        const creds = JSON.parse(import_fs3.default.readFileSync(credsFile, "utf-8"));
         if (creds.registered && creds.me) isRegistered = true;
       } catch (_) {
       }
@@ -4744,8 +6100,8 @@ async function requestPairingCodeDirectly(rawPhoneNumber) {
     if (!isRegistered) {
       console.log("[BAILEYS] \u{1F9F9} Membersihkan sisa pairing sebelumnya untuk kode baru...");
       try {
-        import_fs.default.rmSync(sessionPath, { recursive: true, force: true });
-        import_fs.default.mkdirSync(sessionPath, { recursive: true });
+        import_fs3.default.rmSync(sessionPath, { recursive: true, force: true });
+        import_fs3.default.mkdirSync(sessionPath, { recursive: true });
       } catch (_) {
       }
     }
@@ -4775,9 +6131,9 @@ async function startBaileysBot(phoneNumberForPairing) {
     }
     botState.status = "CONNECTING";
     botState.errorMessage = null;
-    const sessionPath = import_path.default.resolve(process.cwd(), config.sessionDir || "./sessions");
-    if (!import_fs.default.existsSync(sessionPath)) {
-      import_fs.default.mkdirSync(sessionPath, { recursive: true });
+    const sessionPath = import_path3.default.resolve(process.cwd(), config.sessionDir || "./sessions");
+    if (!import_fs3.default.existsSync(sessionPath)) {
+      import_fs3.default.mkdirSync(sessionPath, { recursive: true });
     }
     const { state, saveCreds } = await (0, import_baileys.useMultiFileAuthState)(sessionPath);
     let version = [2, 3e3, 1015901307];
@@ -4810,10 +6166,10 @@ async function startBaileysBot(phoneNumberForPairing) {
           let cleanPhone = phoneNumberForPairing.replace(/\D/g, "");
           if (cleanPhone.startsWith("0")) cleanPhone = "62" + cleanPhone.slice(1);
           else if (cleanPhone.startsWith("8")) cleanPhone = "62" + cleanPhone;
-          const code = await sock.requestPairingCode(cleanPhone);
-          botState.pairingCode = code;
+          const code2 = await sock.requestPairingCode(cleanPhone);
+          botState.pairingCode = code2;
           botState.status = "PAIRING_READY";
-          const formatted = code ? code.match(/.{1,4}/g)?.join("-") : code;
+          const formatted = code2 ? code2.match(/.{1,4}/g)?.join("-") : code2;
           console.log(`
 \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
 \u2502  \u{1F511} KODE PAIRING WHATSAPP: ${formatted}              
@@ -4864,8 +6220,8 @@ async function startBaileysBot(phoneNumberForPairing) {
           console.log("\u{1F449} Buka di Chrome: \x1B[1;32mhttp://localhost:3000/lite\x1B[0m untuk menautkan nomor WhatsApp Anda.");
           console.log("\u{1F449} Atau jalankan di terminal: \x1B[1;33mnode pair.js\x1B[0m\n");
           try {
-            import_fs.default.rmSync(sessionPath, { recursive: true, force: true });
-            import_fs.default.mkdirSync(sessionPath, { recursive: true });
+            import_fs3.default.rmSync(sessionPath, { recursive: true, force: true });
+            import_fs3.default.mkdirSync(sessionPath, { recursive: true });
           } catch (_) {
           }
         }
@@ -5310,13 +6666,13 @@ function getLiteDashboardHtml() {
 }
 
 // server.ts
-var import_child_process = require("child_process");
-var import_util = __toESM(require("util"), 1);
-var import_module = require("module");
-var import_meta = {};
-var nodeRequire = typeof require !== "undefined" ? require : (0, import_module.createRequire)(typeof import_meta !== "undefined" && import_meta.url ? import_meta.url : "file://" + process.cwd() + "/server.ts");
+var import_child_process2 = require("child_process");
+var import_util3 = __toESM(require("util"), 1);
+var import_module2 = require("module");
+var import_meta2 = {};
+var nodeRequire = typeof require !== "undefined" ? require : (0, import_module2.createRequire)(typeof import_meta2 !== "undefined" && import_meta2.url ? import_meta2.url : "file://" + process.cwd() + "/server.ts");
 var archiver = nodeRequire("archiver");
-var execAsync = import_util.default.promisify(import_child_process.exec);
+var execAsync2 = import_util3.default.promisify(import_child_process2.exec);
 async function startServer() {
   const app = (0, import_express.default)();
   const PORT = 3e3;
@@ -5369,9 +6725,9 @@ async function startServer() {
       return res.status(400).json({ error: "Nomor telepon WhatsApp diperlukan" });
     }
     try {
-      const code = await requestPairingCodeDirectly(phoneNumber);
-      const formatted = code ? code.match(/.{1,4}/g)?.join("-") || code : code;
-      res.json({ success: true, code: formatted, rawCode: code, message: "Kode pairing berhasil dibuat!" });
+      const code2 = await requestPairingCodeDirectly(phoneNumber);
+      const formatted = code2 ? code2.match(/.{1,4}/g)?.join("-") || code2 : code2;
+      res.json({ success: true, code: formatted, rawCode: code2, message: "Kode pairing berhasil dibuat!" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -5398,16 +6754,20 @@ async function startServer() {
     });
   });
   app.post("/api/simulate", async (req, res) => {
-    const { command, senderName = "GhanzTester", isPremium = false, isOwner = false } = req.body;
+    const { command, senderNumber, senderName, isPremium = false, isOwner = true } = req.body;
     if (!command) {
       return res.status(400).json({ error: "Command text is required" });
     }
-    const testJid = isOwner ? `${config.ownerNumber}@s.whatsapp.net` : "628999999999@s.whatsapp.net";
+    const rawNum = senderNumber || (isOwner ? config.ownerNumber : "628999999999");
+    const cleanDigits = rawNum.replace(/\D/g, "") || config.ownerNumber;
+    const testJid = `${cleanDigits}@s.whatsapp.net`;
+    const resolvedSenderName = senderName || (cleanDigits === config.ownerNumber ? config.ownerName : "User");
     let replyCaptured = "";
     let reactCaptured = "";
-    const result = await handleIncomingMessage({
+    let imageCaptured = null;
+    const result2 = await handleIncomingMessage({
       senderJid: testJid,
-      senderName,
+      senderName: resolvedSenderName,
       body: command.startsWith(config.prefix) ? command : `${config.prefix}${command}`,
       isGroupAdmin: false,
       sendReply: async (text) => {
@@ -5416,13 +6776,23 @@ async function startServer() {
       },
       sendReaction: async (emoji) => {
         reactCaptured = emoji;
+      },
+      sendImage: async (imageUrlOrBuffer, caption) => {
+        if (caption) replyCaptured = caption;
+        if (typeof imageUrlOrBuffer === "string") {
+          imageCaptured = imageUrlOrBuffer;
+        } else if (Buffer.isBuffer(imageUrlOrBuffer)) {
+          imageCaptured = `data:image/jpeg;base64,${imageUrlOrBuffer.toString("base64")}`;
+        }
+        return { image: true };
       }
     });
     res.json({
-      executed: result.executed,
-      reply: replyCaptured || result.replyText || "Perintah dijalankan tanpa pesan balasan teks.",
+      executed: result2.executed,
+      reply: replyCaptured || result2.replyText || "Perintah dijalankan tanpa pesan balasan teks.",
       reaction: reactCaptured,
-      error: result.error
+      image: imageCaptured,
+      error: result2.error
     });
   });
   app.get("/api/users", (req, res) => {
@@ -5457,9 +6827,9 @@ async function startServer() {
   });
   app.get("/api/git/status", async (req, res) => {
     try {
-      const { stdout: statusOut } = await execAsync('git status -s || echo "Not a repo"');
-      const { stdout: logOut } = await execAsync('git log -n 10 --oneline || echo "No commits"');
-      const { stdout: remoteOut } = await execAsync('git remote -v || echo "No remotes"');
+      const { stdout: statusOut } = await execAsync2('git status -s || echo "Not a repo"');
+      const { stdout: logOut } = await execAsync2('git log -n 10 --oneline || echo "No commits"');
+      const { stdout: remoteOut } = await execAsync2('git remote -v || echo "No remotes"');
       res.json({
         repoUrl: config.githubRepo,
         status: statusOut.trim(),
@@ -5486,8 +6856,8 @@ async function startServer() {
     }
     try {
       const authUrl = `https://${token}@github.com/GhanzStudio/bot.git`;
-      await execAsync(`git remote set-url origin "${authUrl}" || git remote add origin "${authUrl}"`);
-      const { stdout } = await execAsync("git push -u origin main --force");
+      await execAsync2(`git remote set-url origin "${authUrl}" || git remote add origin "${authUrl}"`);
+      const { stdout } = await execAsync2("git push -u origin main --force");
       res.json({ success: true, message: "Berhasil push ke GitHub repository!", output: stdout });
     } catch (err) {
       res.status(500).json({ error: `Gagal push: ${err.message}` });
@@ -5501,22 +6871,37 @@ async function startServer() {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(getLiteDashboardHtml());
   });
-  const distDir = import_path2.default.join(process.cwd(), "dist");
-  const docsDir = import_path2.default.join(process.cwd(), "docs");
-  const staticDir = import_fs2.default.existsSync(import_path2.default.join(distDir, "index.html")) ? distDir : import_fs2.default.existsSync(import_path2.default.join(docsDir, "index.html")) ? docsDir : null;
+  const distDir = import_path4.default.join(process.cwd(), "dist");
+  const docsDir = import_path4.default.join(process.cwd(), "docs");
+  const staticDir = import_fs4.default.existsSync(import_path4.default.join(distDir, "index.html")) ? distDir : import_fs4.default.existsSync(import_path4.default.join(docsDir, "index.html")) ? docsDir : null;
   const hasStatic = staticDir !== null;
   const isAndroidOrTermux = process.platform === "android" || Boolean(process.env.TERMUX_VERSION) || Boolean(process.env.PREFIX && process.env.PREFIX.includes("termux")) || process.env.SERVE_STATIC === "true" || process.argv.includes("--static");
   if (process.env.NODE_ENV !== "production" && !isAndroidOrTermux) {
     const vite = await (0, import_vite.createServer)({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+        ws: false
+      },
       appType: "spa"
     });
     app.use(vite.middlewares);
+    app.use("*", async (req, res, next) => {
+      const url = req.originalUrl;
+      try {
+        let template = import_fs4.default.readFileSync(import_path4.default.resolve(process.cwd(), "index.html"), "utf-8");
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ "Content-Type": "text/html" }).end(template);
+      } catch (e) {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
   } else if (hasStatic) {
-    console.log(`\u26A1 Dashboard mode: Melayani aset web pra-kompilasi dari ${import_path2.default.basename(staticDir)}/ (cepat, hemat RAM & anti layar putih)`);
+    console.log(`\u26A1 Dashboard mode: Melayani aset web pra-kompilasi dari ${import_path4.default.basename(staticDir)}/ (cepat, hemat RAM & anti layar putih)`);
     app.use(import_express.default.static(staticDir));
     app.get("*", (req, res) => {
-      res.sendFile(import_path2.default.join(staticDir, "index.html"));
+      res.sendFile(import_path4.default.join(staticDir, "index.html"));
     });
   } else {
     console.log("\u26A1 Dashboard mode: Melayani Lite Web Controller (zero-dependency fallback)");

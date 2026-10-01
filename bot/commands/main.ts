@@ -4,113 +4,201 @@
 
 import { BotCommand, CommandContext } from './types.ts';
 import { config } from '../config.ts';
+import { resolveRealPhoneNumber } from '../lib/lidResolver.ts';
+import { isConfiguredOwner } from '../database/models/User.ts';
 import os from 'os';
+import path from 'path';
+import fs from 'fs';
+
+function getCategoryIcon(cat: string): string {
+  const c = cat.toUpperCase();
+  if (c.includes('MAIN')) return '📌';
+  if (c.includes('OWNER')) return '👑';
+  if (c.includes('TOOL')) return '🛠️';
+  if (c.includes('GAME')) return '🎮';
+  if (c.includes('DOWNLOAD')) return '📥';
+  if (c.includes('SEARCH')) return '🔍';
+  if (c.includes('STICKER')) return '🎨';
+  if (c.includes('AI')) return '🤖';
+  if (c.includes('GROUP') || c.includes('GRUP')) return '👥';
+  if (c.includes('RELIGI') || c.includes('ISLAM')) return '🕌';
+  if (c.includes('INFO')) return 'ℹ️';
+  if (c.includes('CEK')) return '🔎';
+  if (c.includes('USER') || c.includes('PROFILE')) return '👤';
+  if (c.includes('CANVAS')) return '🖼️';
+  if (c.includes('RANDOM')) return '🎲';
+  if (c.includes('EPHOTO') || c.includes('LOGO')) return '✨';
+  if (c.includes('ANIME')) return '🎏';
+  if (c.includes('CLAN') || c.includes('GUILD')) return '🛡️';
+  if (c.includes('CONVERT')) return '🔄';
+  if (c.includes('BERITA') || c.includes('NEWS')) return '📰';
+  if (c.includes('STALKER')) return '🕵️';
+  if (c.includes('TTS') || c.includes('VOICE')) return '🎙️';
+  if (c.includes('RPG')) return '⚔️';
+  return '📂';
+}
 
 export const mainCommands: BotCommand[] = [
   {
     name: 'menu',
-    aliases: ['help', 'start'],
+    aliases: ['help', 'start', 'menucat'],
     category: 'MAIN MENU',
-    description: 'Menampilkan menu utama dan kategori bot',
-    usage: '.menu',
+    description: 'Menampilkan menu utama, kategori, atau sub-menu spesifik',
+    usage: '.menu [nama_kategori]',
     execute: async (ctx: CommandContext) => {
-      const { user, prefix, reply } = ctx;
-      const text = `👋 *Halo, ${user.name || 'Kak'}!*
+      const { user, prefix, reply, senderJid, text: queryText } = ctx;
+      const identity = resolveRealPhoneNumber(senderJid || user.id);
+      const isOwnerUser = isConfiguredOwner(identity.phoneNumber) || isConfiguredOwner(senderJid || user.id);
+      const isPremUser = user.premium || user.role === 'premium';
+
+      const query = queryText ? queryText.trim().toLowerCase() : '';
+
+      // Import command category registry
+      const { getCommandsByCategory, getAllCommands } = await import('./index.ts');
+      const grouped = getCommandsByCategory();
+
+      // If user typed a category argument or sub-command like .menu ai, .menu download, .menu owner
+      if (query) {
+        // Try matching category
+        let targetCategory = '';
+        let matchedCmds: BotCommand[] = [];
+
+        for (const [catName, cmds] of Object.entries(grouped)) {
+          const catClean = catName.toLowerCase();
+          if (
+            catClean === query ||
+            catClean.includes(query) ||
+            query.includes(catClean) ||
+            (query === 'owner' && catClean.includes('owner')) ||
+            (query === 'ai' && catClean.includes('ai')) ||
+            (query === 'tools' && catClean.includes('tool')) ||
+            (query === 'game' && catClean.includes('game')) ||
+            (query === 'download' && catClean.includes('download')) ||
+            (query === 'search' && catClean.includes('search')) ||
+            (query === 'sticker' && catClean.includes('sticker')) ||
+            (query === 'group' && catClean.includes('group')) ||
+            (query === 'religi' && catClean.includes('religi')) ||
+            (query === 'rpg' && catClean.includes('rpg')) ||
+            (query === 'anime' && catClean.includes('anime')) ||
+            (query === 'berita' && catClean.includes('berita')) ||
+            (query === 'clan' && catClean.includes('clan'))
+          ) {
+            targetCategory = catName;
+            matchedCmds = cmds;
+            break;
+          }
+        }
+
+        if (targetCategory && matchedCmds.length > 0) {
+          const icon = getCategoryIcon(targetCategory);
+          let catReply = `╭───「 ${icon} *KATEGORI: ${targetCategory.toUpperCase()}* 」\n│\n`;
+          for (const cmd of matchedCmds) {
+            const aliasesStr = cmd.aliases && cmd.aliases.length > 0 ? ` (Alias: ${cmd.aliases.map(a => prefix + a).join(', ')})` : '';
+            catReply += `│ 📌 *${prefix}${cmd.name}*\n│    └ ${cmd.description || 'Fitur bot'}${aliasesStr}\n`;
+          }
+          catReply += `│\n╰─────────────────────────────\n`;
+          catReply += `*Total ${matchedCmds.length} perintah dalam kategori ini.*\n`;
+          catReply += `_Ketik ${prefix}menu untuk kembali ke daftar menu utama._`;
+
+          await reply(catReply);
+          return;
+        }
+
+        // Try matching individual command detail
+        const allCmds = getAllCommands();
+        const singleCmd = allCmds.find(c => c.name.toLowerCase() === query || (c.aliases && c.aliases.map(a => a.toLowerCase()).includes(query)));
+        if (singleCmd) {
+          const detailText =
+            `📌 *INFORMASI PERINTAH: ${prefix}${singleCmd.name.toUpperCase()}*\n\n` +
+            `• *Nama Command:* ${prefix}${singleCmd.name}\n` +
+            `• *Kategori:* ${singleCmd.category}\n` +
+            `• *Deskripsi:* ${singleCmd.description || '-'}\n` +
+            `• *Penggunaan:* ${singleCmd.usage || prefix + singleCmd.name}\n` +
+            `• *Alias:* ${singleCmd.aliases && singleCmd.aliases.length > 0 ? singleCmd.aliases.map(a => prefix + a).join(', ') : 'Tidak ada'}\n` +
+            `• *Akses Khusus:* ${singleCmd.ownerOnly ? '👑 Khusus Owner' : (singleCmd.premiumOnly ? '💎 Khusus Premium' : '👤 Semua Pengguna')}\n\n` +
+            `_Ketik ${prefix}menu untuk melihat seluruh kategori._`;
+          await reply(detailText);
+          return;
+        }
+      }
+
+      // Default Main Menu Overview
+      const roleText = isOwnerUser ? '👑 OWNER (SUPER ADMIN)' : (isPremUser ? '💎 PREMIUM (VIP)' : '👤 USER BIASA');
+      const limitText = isOwnerUser ? 'Unlimited (Bebas Biaya 👑)' : (isPremUser ? 'Unlimited (VIP ✨)' : `${user.limit || 0} tersisa`);
+      const koinText = isOwnerUser ? '🪙 Unlimited (Sultan)' : `🪙 ${(user.koin || 0).toLocaleString('id-ID')}`;
+      const levelText = isOwnerUser ? '🎖️ 999 (Max Developer 👑)' : `🎖️ ${user.level || 1} (Exp: ${user.exp || 0})`;
+
+      const text = `👋 *Halo, ${user.name || 'Pengguna'}!*
 
 ╭───「 *INFORMASI PENGGUNA* 」
-│ 👤 Nama: ${user.name}
-│ 🏷️ Role: ${user.role.toUpperCase()}
-│ ⚡ Limit: ${user.premium ? 'Unlimited (VIP)' : `${user.limit} tersisa`}
-│ 🪙 Koin: ${user.koin.toLocaleString('id-ID')}
-│ 🎖️ Level: ${user.level} (Exp: ${user.exp})
+│ 👤 Nama: ${user.name || 'Pengguna'} ${isOwnerUser ? '👑' : ''}
+│ 📱 Nomor: ${identity.formattedPhone}
+│ 🏷️ Role: ${roleText}
+│ ⚡ Limit: ${limitText}
+│ 🪙 Koin: ${koinText}
+│ 🎖️ Level: ${levelText}
 ╰───────────────────────
 
-╭───「 *KATEGORI FITUR* 」
-│ 📌 *${prefix}allmenu* - Seluruh daftar menu
-│ 🛠️ *${prefix}menucat tools* - Fitur alat praktis
-│ 🎮 *${prefix}menucat game* - Game interaktif
-│ 📥 *${prefix}menucat download* - Downloader medsos
-│ 🔍 *${prefix}menucat search* - Pencarian web & data
-│ 🎨 *${prefix}menucat sticker* - Pembuat stiker WA
-│ 🤖 *${prefix}menucat ai* - Kecerdasan Buatan (AI)
-│ 👥 *${prefix}menucat group* - Manajemen grup
-│ 🕌 *${prefix}menucat religi* - Fitur Islami
-│ 📰 *${prefix}menucat berita* - Berita terkini
-│ 🎲 *${prefix}menucat rpg* - Game petualangan RPG
-│ 👤 *${prefix}profile* - Cek profil lengkapmu
+╭───「 📂 *KATEGORI FITUR BOT* 」
+│ 📌 *${prefix}allmenu* ──── (Lihat Seluruh 180+ Fitur)
+│ 👑 *${prefix}menu owner* ── (Perintah Khusus Owner)
+│ 🛠️ *${prefix}menu tools* ── (Alat Praktis & Utilitas)
+│ 🤖 *${prefix}menu ai* ───── (Kecerdasan Buatan AI)
+│ 🎮 *${prefix}menu game* ─── (Game Interaktif & Kuis)
+│ 📥 *${prefix}menu download*(Downloader Media Sosial)
+│ 🔍 *${prefix}menu search* ─ (Pencarian Data & Web)
+│ 🎨 *${prefix}menu sticker*(Pembuat Stiker WA)
+│ 👥 *${prefix}menu group* ── (Pengelola & Moderasi Grup)
+│ 🕌 *${prefix}menu religi* ─ (Fitur & Jadwal Islami)
+│ 📰 *${prefix}menu berita* ─ (Berita Terkini)
+│ 🎲 *${prefix}menu rpg* ──── (Game Petualangan RPG)
+│ 🎏 *${prefix}menu anime* ── (Nonton & Info Anime)
+│ 👤 *${prefix}profile* ───── (Cek Profil Lengkap)
 ╰───────────────────────
 
-_Ketik ${prefix}allmenu untuk melihat seluruh daftar command sekaligus._`;
+💡 *Tips:* Ketik *${prefix}menu <kategori>* untuk membuka perintah di kategori tersebut.
+_Contoh: Ketik *${prefix}menu ai* atau *${prefix}menu download*_`;
+
       await reply(text);
     }
   },
   {
     name: 'allmenu',
     category: 'MAIN MENU',
-    description: 'Menampilkan seluruh daftar command yang tersedia',
+    description: 'Menampilkan seluruh daftar command yang tersedia secara rapi dan lengkap',
     usage: '.allmenu',
     execute: async (ctx: CommandContext) => {
       const { prefix, reply } = ctx;
-      const text = `📜 *DAFTAR LENGKAP FITUR ${config.botName.toUpperCase()}*
+      const { getCommandsByCategory, getTotalCommandsCount } = await import('./index.ts');
+      const grouped = getCommandsByCategory();
+      const totalCmds = getTotalCommandsCount();
 
-┌── [ *MAIN MENU* ]
-│ • ${prefix}menu, ${prefix}allmenu, ${prefix}ping, ${prefix}owner
-│ • ${prefix}rules, ${prefix}donasi, ${prefix}sc, ${prefix}stats
-│ • ${prefix}system, ${prefix}jadibot, ${prefix}stopjadibot
-│ • ${prefix}leaderboard, ${prefix}totalfitur, ${prefix}carifitur
-│ • ${prefix}benefitpremium, ${prefix}benefitowner, ${prefix}tqto
-└──
+      let text = `📜 *DAFTAR LENGKAP FITUR ${config.botName.toUpperCase()} (${totalCmds}+ COMMANDS)*\n\n`;
 
-┌── [ *TOOLS* ]
-│ • ${prefix}carbon, ${prefix}qrcode, ${prefix}qrcustom, ${prefix}ocr
-│ • ${prefix}hd, ${prefix}removebg, ${prefix}ssweb, ${prefix}nulis
-│ • ${prefix}styleteks, ${prefix}readmore, ${prefix}tourl, ${prefix}toimg
-│ • ${prefix}toaudio, ${prefix}tovideo, ${prefix}tovn, ${prefix}converter
-│ • ${prefix}pastebin, ${prefix}getpaste, ${prefix}ipwho, ${prefix}lookup
-│ • ${prefix}bandingkan-hp, ${prefix}hitungwrmlbb, ${prefix}kalkulatormbg
-│ • ${prefix}nikparser, ${prefix}tempmail, ${prefix}transkrip
-└──
+      for (const [catName, cmds] of Object.entries(grouped)) {
+        const icon = getCategoryIcon(catName);
+        text += `┌── [ ${icon} *${catName.toUpperCase()}* ]\n`;
 
-┌── [ *GAME* ]
-│ • ${prefix}tebakgambar, ${prefix}tebakkata, ${prefix}tebakkalimat
-│ • ${prefix}tebakhewan, ${prefix}tebakbendera, ${prefix}tebaklagu
-│ • ${prefix}tebaklirik, ${prefix}tebakdrakor, ${prefix}tebakfilm
-│ • ${prefix}caklontong, ${prefix}asahotak, ${prefix}family100
-│ • ${prefix}susunkata, ${prefix}kataacak, ${prefix}tictactoe
-│ • ${prefix}ulartangga, ${prefix}riddle, ${prefix}siapakahaku
-└──
+        // Format commands nicely in rows of 3
+        const cmdLines: string[] = [];
+        let line = '│ • ';
+        for (let i = 0; i < cmds.length; i++) {
+          const cmdStr = `${prefix}${cmds[i].name}`;
+          if ((line + cmdStr).length > 42 || (i > 0 && i % 3 === 0)) {
+            cmdLines.push(line);
+            line = `│ • ${cmdStr}`;
+          } else {
+            line += (line === '│ • ' ? '' : ', ') + cmdStr;
+          }
+        }
+        if (line !== '│ • ') {
+          cmdLines.push(line);
+        }
 
-┌── [ *DOWNLOAD* ]
-│ • ${prefix}tiktok, ${prefix}ttmp3, ${prefix}ttmp4, ${prefix}instagramdl
-│ • ${prefix}ytmp3, ${prefix}ytmp4, ${prefix}facebookdl, ${prefix}spotifydl
-│ • ${prefix}capcutdl, ${prefix}githubdl, ${prefix}mediafiredl
-│ • ${prefix}pinterestdl, ${prefix}pixeldraindl, ${prefix}terabox, ${prefix}videy
-└──
+        text += cmdLines.join('\n') + '\n└──\n\n';
+      }
 
-┌── [ *AI CHAT & GENERATOR* ]
-│ • ${prefix}ai, ${prefix}gemini, ${prefix}gpt4o, ${prefix}deepseek
-│ • ${prefix}text2img, ${prefix}musicmaker, ${prefix}quilbot
-│ • ${prefix}toanime, ${prefix}toghibli, ${prefix}to3d, ${prefix}tofigure
-│ • ${prefix}tocartoon, ${prefix}tochibi, ${prefix}toblack, ${prefix}tohijab
-└──
-
-┌── [ *GROUP* ]
-│ • ${prefix}hidetag, ${prefix}tagall, ${prefix}kick, ${prefix}promote
-│ • ${prefix}demote, ${prefix}open, ${prefix}close, ${prefix}linkgc
-│ • ${prefix}groupinfo, ${prefix}rulesgrup, ${prefix}setrulesgrup
-│ • ${prefix}setwelcome, ${prefix}setgoodbye, ${prefix}addantilink
-│ • ${prefix}delantilink, ${prefix}antilinkall, ${prefix}antitoxic
-│ • ${prefix}antispam, ${prefix}antibot, ${prefix}giveaway, ${prefix}absen
-└──
-
-┌── [ *RPG & CLAN* ]
-│ • ${prefix}adventure, ${prefix}hunt, ${prefix}mining, ${prefix}fishing
-│ • ${prefix}inventory, ${prefix}shop, ${prefix}dungeon, ${prefix}boss
-│ • ${prefix}craft, ${prefix}heal, ${prefix}pet, ${prefix}guild
-│ • ${prefix}clancreate, ${prefix}claninfo, ${prefix}clanjoin, ${prefix}clanwar
-└──
-
-_Gunakan perintah dengan bijak. Total command: 180+_`;
+      text += `_Gunakan perintah dengan bijak. Total fitur aktif: ${totalCmds}+_`;
       await reply(text);
     }
   },
@@ -132,12 +220,25 @@ _Gunakan perintah dengan bijak. Total command: 180+_`;
   },
   {
     name: 'owner',
-    aliases: ['creator'],
+    aliases: ['creator', 'developer'],
     category: 'MAIN MENU',
     description: 'Informasi kontak pemilik/developer bot',
     usage: '.owner',
     execute: async (ctx: CommandContext) => {
-      await ctx.reply(`👑 *OWNER & DEVELOPER*\n\nNama: ${config.ownerName}\nWhatsApp: wa.me/${config.ownerNumber}\nGitHub: ${config.githubRepo}\n\n_Untuk sewa bot, kerja sama, atau lapor bug silakan chat kontak di atas._`);
+      const ownerIdentity = resolveRealPhoneNumber(config.ownerNumber || '6287891284460');
+      await ctx.reply(
+        `👑 *OWNER & DEVELOPER UTAMA* 👑\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `• Nama: ${config.ownerName || 'GhanzStudio'} 👑\n` +
+        `• Nomor HP: ${ownerIdentity.formattedPhone}\n` +
+        `• WhatsApp: https://wa.me/${ownerIdentity.phoneNumber}\n` +
+        `• ID Akun (LID): 56106063794223@lid\n` +
+        `• JID: ${ownerIdentity.jid}\n` +
+        `• Status: 👑 FOUNDER / SUPER ADMIN\n` +
+        `• GitHub: ${config.githubRepo}\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `_Untuk keperluan sewa bot, upgrade VIP Premium, atau kerja sama silakan hubungi kontak resmi di atas._`
+      );
     }
   },
   {
@@ -151,11 +252,43 @@ _Gunakan perintah dengan bijak. Total command: 180+_`;
   },
   {
     name: 'donasi',
+    aliases: ['donate', 'qris', 'cekqris', 'lihatqris', 'donasipict', 'qrismember', 'qrisbot'],
     category: 'MAIN MENU',
-    description: 'Informasi donasi & support operasional bot',
-    usage: '.donasi',
+    description: 'Informasi donasi & lihat QRIS resmi untuk mendukung operasional server bot',
+    usage: '.donasi / .qris / .cekqris / .lihatqris',
     execute: async (ctx: CommandContext) => {
-      await ctx.reply(`💖 *DONASI & DUKUNGAN*\n\nTerima kasih atas niat baikmu untuk mendukung biaya server bot:\n\n• Dana / Gopay / OVO: 0812-xxxx-xxxx\n• QRIS: Tersedia via chat owner (${config.prefix}owner)\n• Trakteer / Saweria: saweria.co/ghanzstudio\n\n_Setiap donasi akan mendapatkan bonus limit / role Premium!_`);
+      const donationMessage =
+        `💖 *DONASI & DUKUNGAN BOT*\n\n` +
+        `Terima kasih banyak atas niat baik kamu untuk mendukung operasional server bot ini 🙏\n\n` +
+        `• *QRIS (All Payment):* Silakan scan kode QRIS pada gambar di atas\n` +
+        `• *Transfer E-Wallet:* 087817697830 (Dana / GoPay / OVO)\n` +
+        `• *Hubungi Owner:* +62 878-9128-4460\n\n` +
+        `_Dukungan sekecil apa pun sangat berarti agar layanan bot bisa terus aktif 24 jam. Terima kasih!_`;
+
+      try {
+        const { getQrisImageFromDB } = await import('../database/models/QrisSettings.ts');
+        const qrisData = await getQrisImageFromDB();
+
+        if (qrisData && qrisData.buffer && ctx.sendImage) {
+          await ctx.sendImage(qrisData.buffer, donationMessage);
+          return;
+        }
+      } catch (err: any) {
+        console.warn('[donasi] Gagal mengambil gambar dari DB, fallback ke file lokal:', err.message);
+      }
+
+      const qrisPath = path.resolve(process.cwd(), 'bot/assets/qris.jpg');
+      if (fs.existsSync(qrisPath) && ctx.sendImage) {
+        try {
+          const imageBuffer = fs.readFileSync(qrisPath);
+          await ctx.sendImage(imageBuffer, donationMessage);
+          return;
+        } catch (err: any) {
+          console.warn('[donasi] Gagal mengirim gambar QRIS:', err.message);
+        }
+      }
+
+      await ctx.reply(donationMessage);
     }
   },
   {
@@ -255,6 +388,71 @@ _Gunakan perintah dengan bijak. Total command: 180+_`;
     execute: async (ctx: CommandContext) => {
       const cat = ctx.text.trim().toLowerCase();
       await ctx.reply(`📂 *MENU KATEGORI: ${cat.toUpperCase() || 'SEMUA'}*\nKetik *${ctx.prefix}allmenu* untuk melihat seluruh rincian command.`);
+    }
+  },
+  {
+    name: 'syaratprem',
+    aliases: ['daftarprem', 'skprem', 'sewakontrak'],
+    category: 'MAIN MENU',
+    description: 'Menampilkan Syarat & Ketentuan serta Persetujuan Layanan Langganan Premium',
+    usage: '.syaratprem',
+    execute: async (ctx: CommandContext) => {
+      const text =
+        `📌 *SYARAT & KETENTUAN LANGGANAN PREMIUM (TERMS OF SERVICE)* 📄\n\n` +
+        `Sebelum mendaftar / mengaktifkan status Premium, Anda **diwajibkan menyetujui** ketentuan berikut:\n\n` +
+        `1. 💳 *Pembayaran & Jatuh Tempo:*\n` +
+        `   • Pembayaran dilunasi sesuai durasi paket (misal: 30 Hari).\n` +
+        `   • Apabila masa berlaku berakhir dan pembayaran belum dilunasi (nunggak), status Premium akan otomatis **ditangguhkan (di-suspend)**.\n\n` +
+        `2. 📝 *Persetujuan Pengguna:*\n` +
+        `   • Ketik *${ctx.prefix}setuju* untuk memberikan persetujuan resmi atas syarat ini secara tersimpan di Database Bot.\n` +
+        `   • Setelah menyetujui, nomor Anda akan terverifikasi dan siap diaktifkan oleh Owner.\n\n` +
+        `3. 📍 *Verifikasi Identitas Akun:*\n` +
+        `   • Anda dapat secara sukarela membagikan lokasi/wilayah Anda saat verifikasi langganan untuk validasi akun.\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━\n` +
+        `👉 Ketik *${ctx.prefix}setuju* untuk menyetujui Ketentuan Layanan & melanjutkan aktivasi Premium.`;
+
+      await ctx.reply(text);
+    }
+  },
+  {
+    name: 'setuju',
+    aliases: ['accprem', 'setujuprem'],
+    category: 'MAIN MENU',
+    description: 'Menyetujui Syarat & Ketentuan Layanan Premium secara resmi di Database',
+    usage: '.setuju',
+    execute: async (ctx: CommandContext) => {
+      const { user, reply, senderJid, sock } = ctx;
+
+      user.termsAccepted = true;
+      user.termsAcceptedAt = new Date();
+      await user.save?.();
+
+      const num = senderJid ? senderJid.split('@')[0] : user.id.split('@')[0];
+
+      await reply(
+        `✅ *PERSETUJUAN LAYANAN PREMIUM BERHASIL DISIMPAN!* 📋\n\n` +
+        `• 📱 *Nomor:* wa.me/${num}\n` +
+        `• 👤 *Nama:* ${user.name || 'User'}\n` +
+        `• ⏱️ *Waktu Persetujuan:* ${new Date().toLocaleString('id-ID')}\n` +
+        `• 📄 *Status:* Telah menyetujui Ketentuan Layanan Premium secara sah!\n\n` +
+        `👉 Silakan hubungi Owner (*${ctx.prefix}owner*) atau kirim bukti transfer untuk penyelesaian proses perpanjangan / aktivasi VIP!`
+      );
+
+      // Notify Owner about accepted terms
+      try {
+        if (sock && config.ownerNumber) {
+          const ownerJid = `${config.ownerNumber.replace(/\D/g, '')}@s.whatsapp.net`;
+          const notifOwner =
+            `🔔 *USER TELAH MENYETUJUI SYARAT & KETENTUAN PREMIUM!* 📄\n\n` +
+            `• 📱 *User:* ${user.name} (@${num})\n` +
+            `• ⏱️ *Waktu:* ${new Date().toLocaleString('id-ID')}\n` +
+            `• 📋 *Persetujuan:* S&K Pembayaran & Jatuh Tempo disetujui.\n\n` +
+            `Ketik \`${ctx.prefix}addprem ${num} 30\` untuk mengaktifkan paket Premium 30 hari!`;
+          await sock.sendMessage(ownerJid, { text: notifOwner });
+        }
+      } catch (e: any) {
+        console.warn('[setuju] Owner notif warning:', e.message);
+      }
     }
   },
   {

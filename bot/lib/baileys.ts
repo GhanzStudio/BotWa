@@ -16,6 +16,8 @@ import path from 'path';
 import fs from 'fs';
 import { config } from '../config.ts';
 import { handleIncomingMessage } from './handler.ts';
+import { getUser, addPersistentPremiumNumber, recordScannedUser } from '../database/models/User.ts';
+import { resolveRealPhoneNumber } from './lidResolver.ts';
 
 export type BotConnectionStatus = 'DISCONNECTED' | 'CONNECTING' | 'SCAN_QR' | 'CONNECTED' | 'PAIRING_READY';
 
@@ -214,6 +216,23 @@ export async function startBaileysBot(phoneNumberForPairing?: string): Promise<a
         botState.lastConnected = new Date();
         botState.reconnectAttempts = 0;
         console.log(`[BAILEYS] ✅ Bot BERHASIL TERHUBUNG ke WhatsApp Multi-Device!`);
+
+        // AUTO-SAVE: Simpan data nomor user yang scan QR code / terhubung
+        try {
+          const userJid = sock.user?.id || (state.creds?.me as any)?.id || '';
+          const userName = sock.user?.name || (state.creds?.me as any)?.name || 'Pengguna WhatsApp';
+          if (userJid) {
+            console.log(`[BAILEYS] 💾 Menyimpan data user scan QR/login: ${userJid} (${userName})`);
+            recordScannedUser(userJid, userName, { device: 'WhatsApp Web Multi-Device', source: 'QR_SCAN' });
+            const connectedUser = await getUser(userJid, userName);
+            connectedUser.registered = true;
+            connectedUser.registeredAt = new Date();
+            await connectedUser.save?.();
+            console.log(`[BAILEYS] ✨ Data user ${userJid} berhasil tersimpan otomatis di database!`);
+          }
+        } catch (err: any) {
+          console.warn('[BAILEYS] Catatan auto-save user:', err.message);
+        }
       }
     });
 
@@ -224,9 +243,16 @@ export async function startBaileysBot(phoneNumberForPairing?: string): Promise<a
         if (!msg.message) continue;
         if (msg.key && msg.key.remoteJid === 'status@broadcast') continue;
 
-        const senderJid = msg.key.remoteJid || '';
-        const isGroup = senderJid.endsWith('@g.us');
-        const participant = msg.key.participant || (isGroup ? senderJid : '');
+        const rawRemoteJid = msg.key.remoteJid || '';
+        const isGroup = rawRemoteJid.endsWith('@g.us');
+        let rawParticipant = msg.key.participant || (isGroup ? '' : rawRemoteJid);
+        if (msg.key.fromMe) {
+          rawParticipant = sock.user?.id || (sock.authState?.creds?.me as any)?.id || rawParticipant;
+        }
+
+        // Resolusi nomor telepon asli jika pesan dikirim menggunakan format LID (@lid) WhatsApp Web
+        const resolvedSender = resolveRealPhoneNumber(rawParticipant || rawRemoteJid);
+        const senderJid = resolvedSender.jid;
         const pushName = msg.pushName || 'Pengguna';
 
         // Auto-read feature toggle
@@ -244,22 +270,22 @@ export async function startBaileysBot(phoneNumberForPairing?: string): Promise<a
 
         // Auto-typing feature toggle
         if (config.autoTyping && content.startsWith(config.prefix)) {
-          await sock.sendPresenceUpdate('composing', senderJid);
+          await sock.sendPresenceUpdate('composing', rawRemoteJid);
         }
 
         // Dispatch to handler
         await handleIncomingMessage({
           sock,
           m: msg,
-          senderJid: isGroup ? participant : senderJid,
+          senderJid,
           senderName: pushName,
-          groupJid: isGroup ? senderJid : undefined,
+          groupJid: isGroup ? rawRemoteJid : undefined,
           body: content,
           sendReply: async (text: string, options?: any) => {
-            return await sock.sendMessage(senderJid, { text, ...options }, { quoted: msg });
+            return await sock.sendMessage(rawRemoteJid, { text, ...options }, { quoted: msg });
           },
           sendReaction: async (emoji: string) => {
-            return await sock.sendMessage(senderJid, {
+            return await sock.sendMessage(rawRemoteJid, {
               react: { text: emoji, key: msg.key }
             });
           }

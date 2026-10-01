@@ -208,6 +208,60 @@ async function runWithQR(sessionPath) {
 
     if (connection === 'open') {
       console.log('\n\x1b[1;32m🎉 BOT WHATSAPP BERHASIL TERHUBUNG VIA QR CODE! 🎉\x1b[0m\n');
+
+      // Auto-save user data saat scan QR berhasil
+      try {
+        const dataDir = path.resolve(process.cwd(), './data');
+        if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+        const usersFile = path.join(dataDir, 'users.json');
+        let users = [];
+        if (fs.existsSync(usersFile)) {
+          try { users = JSON.parse(fs.readFileSync(usersFile, 'utf-8')); } catch (_) {}
+        }
+        const userJid = sock.user?.id || (state.creds?.me)?.id || '';
+        const userName = sock.user?.name || (state.creds?.me)?.name || 'Pengguna WhatsApp';
+        if (userJid) {
+          const cleanJid = userJid.split('@')[0].split(':')[0] + '@s.whatsapp.net';
+          const existing = users.find(u => u.id === cleanJid);
+          if (!existing) {
+            users.push({
+              id: cleanJid,
+              name: userName,
+              role: 'user',
+              premium: false,
+              registered: true,
+              registeredAt: new Date().toISOString(),
+              limit: 50,
+              koin: 1000
+            });
+            fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+            console.log(`💾 \x1b[1;32mInfo pengguna ${cleanJid} otomatis tersimpan ke data/users.json!\x1b[0m`);
+          }
+
+          // Save to data/scanned_users.json
+          const scannedFile = path.join(dataDir, 'scanned_users.json');
+          let scanned = [];
+          if (fs.existsSync(scannedFile)) {
+            try { scanned = JSON.parse(fs.readFileSync(scannedFile, 'utf-8')); } catch (_) {}
+          }
+          const cleanNum = cleanJid.split('@')[0].replace(/\D/g, '');
+          if (!scanned.find(s => (s.number === cleanNum || s.jid === cleanJid))) {
+            scanned.push({
+              jid: cleanJid,
+              number: cleanNum,
+              name: userName,
+              scannedAt: new Date().toISOString(),
+              device: 'Multi-Device WA Web Terminal',
+              source: 'QR_SCAN'
+            });
+            fs.writeFileSync(scannedFile, JSON.stringify(scanned, null, 2));
+            console.log(`💾 \x1b[1;32mNomor ${cleanNum} tersimpan di data/scanned_users.json!\x1b[0m`);
+          }
+        }
+      } catch (err) {
+        console.warn('Notice saving QR user:', err.message);
+      }
+
       rl.close();
       process.exit(0);
     }

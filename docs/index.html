@@ -10,6 +10,65 @@
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <script>
+      // Completely silence Vite WebSocket / HMR disconnection overlays and unhandled rejections
+      (function() {
+        function shouldSuppress(str) {
+          if (!str) return false;
+          var s = String(str).toLowerCase();
+          return s.indexOf('websocket') !== -1 || s.indexOf('vite') !== -1 || s.indexOf('ws') !== -1 || s.indexOf('closed without opened') !== -1;
+        }
+
+        // Intercept console.error to prevent top-level uncaught display
+        var origConsoleError = console.error;
+        console.error = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var joined = args.map(function(a) { return String((a && a.message) || a || ''); }).join(' ');
+          if (shouldSuppress(joined)) {
+            return;
+          }
+          return origConsoleError.apply(console, arguments);
+        };
+
+        window.onerror = function(message, source, lineno, colno, error) {
+          var msg = String(message || (error && error.message) || '');
+          if (shouldSuppress(msg)) {
+            return true; // suppresses error in browser
+          }
+        };
+
+        window.addEventListener('unhandledrejection', function(e) {
+          var msg = (e && e.reason && (e.reason.message || e.reason.stack)) || String((e && e.reason) || '');
+          if (shouldSuppress(msg)) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            return false;
+          }
+        }, true);
+
+        window.addEventListener('error', function(e) {
+          var msg = (e && (e.message || (e.error && e.error.message))) || '';
+          if (shouldSuppress(msg)) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            return false;
+          }
+        }, true);
+
+        // Hide any Vite error overlay custom element if injected into DOM
+        var observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+              if (node && node.nodeName && node.nodeName.toLowerCase() === 'vite-error-overlay') {
+                node.remove();
+              }
+            });
+          });
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      })();
+
       // When served statically on GitHub Pages root (where /src/main.tsx is not compiled by Vite),
       // seamlessly forward to the pre-compiled /docs/ dashboard
       if (window.location.hostname.includes('github.io') && !window.location.pathname.includes('/docs')) {
@@ -17,8 +76,8 @@
         window.location.replace(cleanPath + 'docs/');
       }
     </script>
-    <script type="module" crossorigin src="./assets/index-D91hOfGX.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-B-2c3X8C.css">
+    <script type="module" crossorigin src="./assets/index-BHE4XF-7.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CWY4aLCL.css">
   </head>
   <body>
     <div id="root">

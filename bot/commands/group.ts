@@ -3,6 +3,8 @@
  */
 
 import { BotCommand, CommandContext } from './types.ts';
+import { config } from '../config.ts';
+import { requestGroup18 } from '../database/models/Group.ts';
 
 export const groupCommands: BotCommand[] = [
   {
@@ -575,6 +577,129 @@ export const groupCommands: BotCommand[] = [
     groupOnly: true,
     execute: async (ctx: CommandContext) => {
       await ctx.reply(`ℹ️ Pemberitahuan perubahan susunan admin grup.`);
+    }
+  },
+  {
+    name: 'persetujuan18',
+    aliases: ['setnsfw', 'enable18plus', 'akses18plus', 'setumur18'],
+    category: 'GROUP',
+    description: 'Persetujuan resmi admin grup untuk mengaktifkan akses pembuatan foto/animasi 18+',
+    usage: '.persetujuan18 [setuju / batalkan]',
+    groupOnly: true,
+    adminOnly: true,
+    execute: async (ctx: CommandContext) => {
+      const action = (ctx.args[0] || '').toLowerCase();
+      const group = ctx.group;
+
+      if (!group) {
+        return ctx.reply('❌ Perintah ini hanya dapat dijalankan di dalam Grup WhatsApp.');
+      }
+
+      if (action === 'setuju' || action === 'on' || action === 'enable' || action === '1') {
+        group.nsfwEnabled = true;
+        group.ageConsentAccepted = true;
+        group.ageConsentAcceptedBy = ctx.senderJid || 'admin';
+        group.ageConsentAcceptedAt = new Date();
+        await group.save?.();
+
+        const adminName = ctx.user?.name || (ctx.senderJid ? ctx.senderJid.split('@')[0] : 'Admin');
+        return ctx.reply(
+          `⚠️ *PERSETUJUAN KONTEN FOTO ANIMASI 18+ DIAKTIFKAN*\n\n` +
+          `Grup (*${group.name || 'Grup'}*) telah secara resmi menyetujui syarat & ketentuan akses pembuatan foto/animasi 18+.\n\n` +
+          `📌 *DETAIL PERSETUJUAN:*\n` +
+          `• Disetujui Oleh Admin: @${adminName}\n` +
+          `• Waktu Persetujuan: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB\n` +
+          `• Status Akses: *DIIZINKAN (AKTIF)*\n\n` +
+          `🛡️ *PERSYARATAN & ATURAN GRUP:*\n` +
+          `1. Anggota di dalam grup ini wajib berusia 18 tahun ke atas.\n` +
+          `2. Penyalahgunaan akses oleh anak di bawah umur sepenuhnya menjadi tanggung jawab admin grup.\n` +
+          `3. Ketik *.anime18 <prompt>* atau *.waifu18* untuk membuat foto animasi 18+.\n\n` +
+          `_Ketik *.persetujuan18 batalkan* jika ingin mencabut izin ini kapan saja._`
+        );
+      }
+
+      if (action === 'batalkan' || action === 'off' || action === 'disable' || action === '0') {
+        group.nsfwEnabled = false;
+        group.ageConsentAccepted = false;
+        group.ageConsentAcceptedBy = null;
+        group.ageConsentAcceptedAt = null;
+        await group.save?.();
+
+        return ctx.reply(
+          `🔒 *IZIN KONTEN 18+ TELAH DICABUT*\n\n` +
+          `Fitur pembuatan foto/animasi 18+ di grup ini telah *DINONAKTIFKAN*.\n` +
+          `Semua perintah foto 18+ dikunci kembali untuk mencegah penggunaan oleh anak di bawah umur.`
+        );
+      }
+
+      const isApproved = Boolean(group.nsfwEnabled && group.ageConsentAccepted && group.ownerApproved18);
+      return ctx.reply(
+        `🔞 *PERSETUJUAN KONTEN DEWASA (18+) GRUP*\n\n` +
+        `• Status Admin Grup: ${group.nsfwEnabled ? '✅ *DISETUJUI ADMIN*' : '❌ *BELUM DISETUJUI ADMIN*'}\n` +
+        `• Status ACC Owner: ${group.ownerApproved18 ? '✅ *DISETUJUI OWNER*' : '❌ *BELUM DISETUJUI OWNER*'}\n` +
+        `• Status Akses Total: ${isApproved ? '🟢 *AKTIF (DIIZINKAN)*' : '🔴 *TERKUNCI*'}\n\n` +
+        `👉 *Langkah 1 (Admin Grup):* Ketik \`.persetujuan18 setuju\`\n` +
+        `👉 *Langkah 2 (Pengajuan Owner):* Ketik \`.ajuakses18 <alasan>\`\n` +
+        `👉 *Langkah 3 (ACC Owner):* Owner mengetik \`.acc18 ${group.id}\``
+      );
+    }
+  },
+  {
+    name: 'ajuakses18',
+    aliases: ['req18', 'mohon18', 'mintaakses18'],
+    category: 'GROUP',
+    description: 'Mengajukan permohonan ke Owner Bot untuk membuka akses foto 18+ di grup',
+    usage: '.ajuakses18 <alasan pengajuan>',
+    groupOnly: true,
+    adminOnly: true,
+    execute: async (ctx: CommandContext) => {
+      const reason = ctx.text?.trim() || 'Anggota grup telah terverifikasi cukup umur (18+).';
+      const group = ctx.group;
+
+      if (!group) {
+        return ctx.reply('❌ Perintah ini hanya dapat dijalankan di dalam Grup WhatsApp.');
+      }
+
+      const adminName = ctx.user?.name || (ctx.senderJid ? ctx.senderJid.split('@')[0] : 'Admin');
+      const ownerJid = `${(config.ownerNumber || '6287891284460').replace(/\D/g, '')}@s.whatsapp.net`;
+
+      // Record pending request persistently
+      await requestGroup18(group.id, group.name, adminName, reason);
+
+      // 1. Reply in Group
+      await ctx.reply(
+        `📩 *PERMOHONAN AKSES 18+ DIKIRIMKAN KE OWNER BOT*\n\n` +
+        `• Nama Grup: *${group.name || 'Grup'}*\n` +
+        `• ID Grup JID: \`${group.id}\`\n` +
+        `• Pengaju (Admin): @${adminName}\n` +
+        `• Alasan: _"${reason}"_\n\n` +
+        `⏳ Permohonan Anda sedang dikirimkan ke obrolan pribadi Owner Bot (${config.ownerName}).\n` +
+        `_Untuk menyetujui, Owner Bot akan mengetik:_ \`.acc18 ${group.id}\``
+      );
+
+      // 2. Direct Private WhatsApp Message to Owner
+      const ownerNotification =
+        `🚨 *PERMOHONAN BARU AKSES FOTO 18+ GRUP*\n\n` +
+        `📌 *DETAIL PENGAJUAN:*\n` +
+        `• Nama Grup: *${group.name || 'Grup'}*\n` +
+        `• ID JID Grup: \`${group.id}\`\n` +
+        `• Pengaju (Admin): @${adminName} (${ctx.senderJid || ''})\n` +
+        `• Alasan Pengajuan: _"${reason}"_\n` +
+        `• Waktu Pengajuan: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB\n\n` +
+        `👉 *TINDAKAN OWNER BOT:*\n` +
+        `• *Untuk Menyetujui (ACC):*\n` +
+        `  \`${ctx.prefix}acc18 ${group.id}\`\n\n` +
+        `• *Untuk Menolak (Reject):*\n` +
+        `  \`${ctx.prefix}reject18 ${group.id}\``;
+
+      if (ctx.sock && ctx.sock.sendMessage) {
+        try {
+          await ctx.sock.sendMessage(ownerJid, { text: ownerNotification });
+          console.log(`[AjuAkses18] Direct private notification successfully sent to Owner JID: ${ownerJid}`);
+        } catch (err: any) {
+          console.warn(`[AjuAkses18] Failed to send private msg to owner:`, err.message);
+        }
+      }
     }
   }
 ];
