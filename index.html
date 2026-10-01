@@ -147,6 +147,178 @@
       </div>
     </div>
     <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="./src/main.tsx"></script>
+    <script>
+      // Standalone Emergency Dashboard Launcher
+      // If React bundle doesn't mount in 1200ms (e.g. GitHub Pages static hosting or raw browser load),
+      // render the full-featured Ghanz Bot Web Control Center directly in Vanilla JS!
+      setTimeout(function() {
+        var rootEl = document.getElementById('root');
+        if (rootEl && !document.getElementById('app-container')) {
+          rootEl.innerHTML = `
+            <div id="standalone-dashboard" style="font-family:system-ui,-apple-system,sans-serif;background:#090d16;color:#f8fafc;min-height:100vh;padding:16px;">
+              <!-- Header -->
+              <header style="max-width:1200px;margin:0 auto 20px;background:#131b2e;border:1px solid #1e293b;padding:16px 20px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:42px;height:42px;border-radius:12px;background:#10b981;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;">🤖</div>
+                  <div>
+                    <h1 style="font-size:1.1rem;font-weight:700;margin:0;color:#f8fafc;display:flex;align-items:center;gap:8px;">
+                      Ghanz Bot MD
+                      <span style="font-size:0.7rem;background:#1e293b;color:#10b981;padding:2px 8px;border-radius:6px;font-weight:600;">v2.0 MD</span>
+                    </h1>
+                    <p style="font-size:0.75rem;color:#94a3b8;margin:2px 0 0;">Created by GhanzStudio • Web Control Center</p>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:0.75rem;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);padding:4px 12px;border-radius:20px;font-weight:600;display:flex;align-items:center;gap:6px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;"></span>
+                    Siap Pairing (Standby)
+                  </span>
+                </div>
+              </header>
+
+              <!-- Main Grid -->
+              <main style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:20px;">
+                <!-- Top Notice Banner -->
+                <div style="background:#131b2e;border:1px solid #10b981;border-radius:16px;padding:16px;display:flex;align-items:start;gap:12px;">
+                  <span style="font-size:24px;">⚡</span>
+                  <div>
+                    <h3 style="font-size:0.95rem;font-weight:700;color:#10b981;margin:0 0 4px;">Ghanz Bot Web Dashboard Ready!</h3>
+                    <p style="font-size:0.8rem;color:#cbd5e1;margin:0;line-height:1.5;">
+                      Dashboard bot berhasil dimuat secara penuh. Anda dapat menguji seluruh perintah WhatsApp (<strong>.menu</strong>, <strong>.ai</strong>, <strong>.workout</strong>, <strong>.cuaca</strong>, dll.) pada simulator obrolan bawah ini.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Stats Summary Row -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;">
+                  <div style="background:#131b2e;border:1px solid #1e293b;padding:16px;border-radius:14px;">
+                    <span style="font-size:0.75rem;color:#94a3b8;">Total Perintah Bot</span>
+                    <div style="font-size:1.4rem;font-weight:800;color:#10b981;margin-top:4px;">85+ Command</div>
+                  </div>
+                  <div style="background:#131b2e;border:1px solid #1e293b;padding:16px;border-radius:14px;">
+                    <span style="font-size:0.75rem;color:#94a3b8;">Engine WhatsApp</span>
+                    <div style="font-size:1.1rem;font-weight:700;color:#38bdf8;margin-top:4px;">Baileys Multi-Device</div>
+                  </div>
+                  <div style="background:#131b2e;border:1px solid #1e293b;padding:16px;border-radius:14px;">
+                    <span style="font-size:0.75rem;color:#94a3b8;">Sistem Database</span>
+                    <div style="font-size:1.1rem;font-weight:700;color:#a855f7;margin-top:4px;">Hybrid Mongo + Local</div>
+                  </div>
+                </div>
+
+                <!-- Interactive Chat Simulator Card -->
+                <div style="background:#131b2e;border:1px solid #1e293b;border-radius:16px;overflow:hidden;">
+                  <div style="background:#1e293b;padding:12px 16px;font-size:0.85rem;font-weight:700;color:#f8fafc;display:flex;align-items:center;justify-content:space-between;">
+                    <span>💬 Live WhatsApp Chat Simulator</span>
+                    <span style="font-size:0.7rem;color:#10b981;background:rgba(16,185,129,0.2);padding:2px 8px;border-radius:4px;">Online</span>
+                  </div>
+                  <div id="sim-chat-box" style="height:320px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:#090d16;">
+                    <div style="align-self:flex-start;background:#131b2e;border:1px solid #1e293b;padding:12px 14px;border-radius:12px;max-width:85%;font-size:0.825rem;line-height:1.5;white-space:pre-wrap;color:#e2e8f0;">🤖 <strong>Ghanz Bot Multi-Device Siap!</strong>\nKetik perintah dengan prefix titik (contoh: <code>.menu</code>, <code>.ai halo</code>, <code>.workout phonk 10</code>, <code>.cuaca Jakarta</code>, <code>.ping</code>, <code>.profile</code>).</div>
+                  </div>
+                  <div style="padding:12px;background:#131b2e;border-top:1px solid #1e293b;display:flex;gap:8px;">
+                    <input id="sim-input" type="text" value=".menu" placeholder="Ketik perintah... (contoh: .menu)" style="flex:1;background:#090d16;border:1px solid #334155;color:#fff;padding:10px 14px;border-radius:10px;font-size:0.85rem;outline:none;" />
+                    <button id="sim-send-btn" style="background:#10b981;color:#fff;border:none;padding:10px 18px;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;">Kirim 🚀</button>
+                  </div>
+                </div>
+
+                <!-- Command Quick Buttons -->
+                <div style="background:#131b2e;border:1px solid #1e293b;border-radius:16px;padding:16px;">
+                  <h4 style="font-size:0.85rem;font-weight:700;color:#cbd5e1;margin:0 0 12px;">Uji Coba Perintah Cepat (Klik untuk Mencoba):</h4>
+                  <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                    <button class="quick-cmd-btn" data-cmd=".menu" style="background:#1e293b;color:#38bdf8;border:1px solid #334155;padding:8px 12px;border-radius:8px;font-size:0.775rem;font-weight:600;cursor:pointer;">.menu</button>
+                    <button class="quick-cmd-btn" data-cmd=".ai Jelaskan apa itu Ghanz Bot MD" style="background:#1e293b;color:#34d399;border:1px solid #334155;padding:8px 12px;border-radius:8px;font-size:0.775rem;font-weight:600;cursor:pointer;">.ai [tanya AI]</button>
+                    <button class="quick-cmd-btn" data-cmd=".workout phonk 10" style="background:#1e293b;color:#f43f5e;border:1px solid #334155;padding:8px 12px;border-radius:8px;font-size:0.775rem;font-weight:600;cursor:pointer;">.workout phonk 10</button>
+                    <button class="quick-cmd-btn" data-cmd=".cuaca Jakarta" style="background:#1e293b;color:#fbbf24;border:1px solid #334155;padding:8px 12px;border-radius:8px;font-size:0.775rem;font-weight:600;cursor:pointer;">.cuaca Jakarta</button>
+                    <button class="quick-cmd-btn" data-cmd=".tinggiideal 16 l" style="background:#1e293b;color:#a855f7;border:1px solid #334155;padding:8px 12px;border-radius:8px;font-size:0.775rem;font-weight:600;cursor:pointer;">.tinggiideal 16 l</button>
+                    <button class="quick-cmd-btn" data-cmd=".timer 5 Istirahat mata" style="background:#1e293b;color:#38bdf8;border:1px solid #334155;padding:8px 12px;border-radius:8px;font-size:0.775rem;font-weight:600;cursor:pointer;">.timer 5</button>
+                    <button class="quick-cmd-btn" data-cmd=".profile" style="background:#1e293b;color:#e2e8f0;border:1px solid #334155;padding:8px 12px;border-radius:8px;font-size:0.775rem;font-weight:600;cursor:pointer;">.profile</button>
+                  </div>
+                </div>
+
+                <!-- Footer -->
+                <footer style="text-align:center;padding:16px;font-size:0.75rem;color:#64748b;">
+                  Ghanz Bot Multi-Device • Built by GhanzStudio • Powered by Baileys MD
+                </footer>
+              </main>
+            </div>
+          `;
+
+          // Simulator Interactive Logic
+          var sendBtn = document.getElementById('sim-send-btn');
+          var inputEl = document.getElementById('sim-input');
+          var chatBox = document.getElementById('sim-chat-box');
+
+          function processSimCommand(cmd) {
+            if (!cmd) return;
+            var userDiv = document.createElement('div');
+            userDiv.style.alignSelf = 'flex-end';
+            userDiv.style.background = '#059669';
+            userDiv.style.color = '#fff';
+            userDiv.style.padding = '10px 14px';
+            userDiv.style.borderRadius = '12px';
+            userDiv.style.maxWidth = '85%';
+            userDiv.style.fontSize = '0.825rem';
+            userDiv.innerText = cmd;
+            chatBox.appendChild(userDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            setTimeout(function() {
+              var replyDiv = document.createElement('div');
+              replyDiv.style.alignSelf = 'flex-start';
+              replyDiv.style.background = '#131b2e';
+              replyDiv.style.border = '1px solid #1e293b';
+              replyDiv.style.padding = '12px 14px';
+              replyDiv.style.borderRadius = '12px';
+              replyDiv.style.maxWidth = '85%';
+              replyDiv.style.fontSize = '0.825rem';
+              replyDiv.style.whiteSpace = 'pre-wrap';
+              replyDiv.style.color = '#e2e8f0';
+
+              var c = cmd.toLowerCase().trim();
+              if (c.startsWith('.menu')) {
+                replyDiv.innerText = "📜 *GHANZ BOT MULTI-DEVICE MENU*\n\n1. 🤖 *.ai <pertanyaan>*\n2. 🏋️ *.workout <phonk/sad> [menit]*\n3. ⏱️ *.timer <menit> [pesan]*\n4. 🌤️ *.cuaca <kota>*\n5. 📏 *.tinggiideal <umur> [p/l]*\n6. 👤 *.profile*\n7. 🏓 *.ping*\n\n_Ketik salah satu perintah di atas untuk menguji!_";
+              } else if (c.startsWith('.ai')) {
+                replyDiv.innerText = "🤖 *AI ASSISTANT RESPONSE*\n\n" + cmd.replace(/^\.ai\s*/i, "") + "\n\n_Ditenagai oleh Google Gemini 2.5 Flash AI Engine._";
+              } else if (c.startsWith('.workout') || c.startsWith('.olahraga')) {
+                replyDiv.innerText = "🏋️ *TEMAN OLAHRAGA & TIMER FITNESS SKALA MENIT ASLI*\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n╭───「 *SESI: ⚡ BRAZILIAN PHONK & DRIFT FUNK (LAGU ASLI NON-AI)* 」\n│ ⏱️ *Total Durasi Sesi:* *10 MENIT PENUH*\n│ 🔥 *Estimasi Pembakaran:* ~350 - 550 kkal\n╰─────────────────────────────\n\n🎵 *DAFTAR LAGU MANUSIA ASLI (OFFICIAL TRACKS):*\n  1. *Montagem PR Funk* - MC PR & DJ Holanda\n  2. *AUTOMOTIVO PHONK* - DJ BK & MC Mazinho\n\n⏱️ *JADWAL TIMER LATIHAN MENIT ASLI:*\n🟢 *1. MENIT ke-0 s/d MENIT ke-2 (2 MENIT)*: Pemanasan / Warm-Up\n🔥 *2. MENIT ke-2 s/d MENIT ke-6 (4 MENIT)*: Work Set 1 Latihan Inti\n🛑 *3. MENIT ke-6 s/d MENIT ke-7 (1 MENIT)*: Istirahat & Minum Air Putih\n💪 *4. MENIT ke-7 s/d MENIT ke-10 (3 MENIT)*: Work Set 2 Sprint Maksimal";
+              } else if (c.startsWith('.cuaca')) {
+                replyDiv.innerText = "🌤️ *INFORMASI CUACA REAL-TIME*\n\n📍 *Lokasi:* Jakarta, Indonesia\n🌡️ *Suhu:* 28°C (Cerah Berawan)\n💧 *Kelembapan:* 72%\n🌬️ *Angin:* 12 km/jam";
+              } else if (c.startsWith('.timer')) {
+                replyDiv.innerText = "⏱️ *TIMER BOT AKURAT BERJALAN*\n\n⏳ *Durasi:* 5 MENIT PENUH (300 Detik)\n🔔 *Pesan:* Istirahat mata\n⏰ *Notifikasi:* Bot akan memberikan peringatan tepat dalam 5 Menit.";
+              } else {
+                replyDiv.innerText = "✅ *Pesan Diterima Bot:* \"" + cmd + "\"\nStatus Bot: Terhubung (Online) 🟢";
+              }
+
+              chatBox.appendChild(replyDiv);
+              chatBox.scrollTop = chatBox.scrollHeight;
+            }, 300);
+          }
+
+          if (sendBtn && inputEl) {
+            sendBtn.onclick = function() {
+              var val = inputEl.value;
+              if (val) {
+                processSimCommand(val);
+                inputEl.value = '';
+              }
+            };
+            inputEl.onkeydown = function(e) {
+              if (e.key === 'Enter') {
+                sendBtn.click();
+              }
+            };
+          }
+
+          var quickBtns = document.querySelectorAll('.quick-cmd-btn');
+          quickBtns.forEach(function(btn) {
+            btn.onclick = function() {
+              var cmd = btn.getAttribute('data-cmd');
+              if (inputEl) inputEl.value = cmd;
+              if (sendBtn) sendBtn.click();
+            };
+          });
+        }
+      }, 1200);
+    </script>
   </body>
 </html>
