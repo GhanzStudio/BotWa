@@ -79,7 +79,7 @@
 
 ### 2. Kloning & Install Dependencies
 ```bash
-git clone https://github.com/GhanzStudio/bot.git
+git clone https://github.com/GhanzStudio/BotWa.git
 cd bot
 npm install
 ```
