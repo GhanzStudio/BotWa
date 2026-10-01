@@ -139,8 +139,11 @@
         <div style="max-width:380px;width:100%;background:#131b2e;padding:24px;border-radius:16px;border:1px solid #1e293b;box-shadow:0 10px 25px rgba(0,0,0,0.5);">
           <div style="width:48px;height:48px;border-radius:12px;background:#10b981;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;">🤖</div>
           <h2 style="font-size:1.15rem;font-weight:700;margin-bottom:8px;color:#f8fafc;">Ghanz Bot Control Center</h2>
-          <p style="font-size:0.875rem;color:#94a3b8;margin-bottom:18px;">Sedang memuat sistem dashboard...</p>
-          <div style="margin-bottom:20px;">
+          <p id="loading-status-text" style="font-size:0.85rem;color:#10b981;font-weight:600;margin-bottom:12px;min-height:22px;transition:all 0.3s ease;">🔄 Memulai Ghanz Bot Engine...</p>
+          <div style="width:100%;background:#1e293b;height:6px;border-radius:3px;overflow:hidden;margin-bottom:18px;">
+            <div id="loading-progress-bar" style="width:20%;height:100%;background:#10b981;border-radius:3px;transition:width 0.35s ease;"></div>
+          </div>
+          <div style="margin-bottom:12px;">
             <div style="width:28px;height:28px;border:3px solid #334155;border-top-color:#10b981;border-radius:50%;margin:0 auto;animation:spin 1s linear infinite;"></div>
           </div>
         </div>
@@ -149,12 +152,30 @@
     <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
     <script type="module" src="./src/main.tsx"></script>
     <script>
-      // Standalone Emergency Dashboard Launcher
-      // If React bundle doesn't mount in 1200ms (e.g. GitHub Pages static hosting or raw browser load),
-      // render the full-featured Ghanz Bot Web Control Center directly in Vanilla JS!
-      setTimeout(function() {
-        var rootEl = document.getElementById('root');
-        if (rootEl && !document.getElementById('app-container')) {
+      (function() {
+        // Changing text steps during 2-second loading limit
+        var steps = [
+          { text: "🔄 Memulai Ghanz Bot Engine...", progress: "20%" },
+          { text: "⚡ Menghubungkan Baileys Multi-Device...", progress: "45%" },
+          { text: "📚 Memuat 85+ Perintah Bot...", progress: "68%" },
+          { text: "📦 Menyiapkan Database Hybrid Mongo...", progress: "88%" },
+          { text: "🚀 Membuka Control Center...", progress: "100%" }
+        ];
+
+        var stepIdx = 0;
+        var interval = setInterval(function() {
+          stepIdx++;
+          if (stepIdx < steps.length) {
+            var txtEl = document.getElementById('loading-status-text');
+            var barEl = document.getElementById('loading-progress-bar');
+            if (txtEl) txtEl.innerText = steps[stepIdx].text;
+            if (barEl) barEl.style.width = steps[stepIdx].progress;
+          } else {
+            clearInterval(interval);
+          }
+        }, 380);
+
+        function renderStandaloneDashboard(rootEl) {
           rootEl.innerHTML = `
             <div id="standalone-dashboard" style="font-family:system-ui,-apple-system,sans-serif;background:#090d16;color:#f8fafc;min-height:100vh;padding:16px;">
               <!-- Header -->
@@ -318,7 +339,15 @@
             };
           });
         }
-      }, 1200);
+
+        // Guaranteed MAXIMUM 2-SECOND LOADING LIMIT (2000ms)
+        setTimeout(function() {
+          var rootEl = document.getElementById('root');
+          if (rootEl && !document.getElementById('app-container')) {
+            renderStandaloneDashboard(rootEl);
+          }
+        }, 2000);
+      })();
     </script>
   </body>
 </html>
